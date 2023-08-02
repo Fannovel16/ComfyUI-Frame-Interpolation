@@ -65,7 +65,7 @@ class Gradually_More_Denoise_KSampler:
     RETURN_NAMES = ("MODEL", "CONDITIONING+", "CONDITIONING-", "LATENT", "VAE", )
     OUTPUT_NODE = True
     FUNCTION = "sample"
-    CATEGORY = "Frame Interpolation"
+    CATEGORY = "ComfyUI Frame Interpolation"
 
     def sample(self, model, positive, negative, latent_image, vae, 
                seed, steps, cfg, sampler_name, scheduler,start_denoise, denoise_increment, denoise_steps):
