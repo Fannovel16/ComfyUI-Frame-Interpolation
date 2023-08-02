@@ -1,0 +1,3 @@
+[submodule "modules/gmfss/GMFSS_Fortuna"]
+	path = modules/gmfss/GMFSS_Fortuna
+	url = https://github.com/98mxr/GMFSS_Fortuna

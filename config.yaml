@@ -1,0 +1,3 @@
+GMFSS_Fortuna:
+  - ckpts_path: ckpts/GMFSS_Fortuna
+  - default_ckpt_download_url: ''
