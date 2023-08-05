@@ -1,3 +1,2 @@
-GMFSS_Fortuna:
-  - ckpts_path: ckpts/GMFSS_Fortuna
-  - default_ckpt_download_url: ''
+#Plz don't delete this file, just edit it when neccessary.
+ckpts_path: "./ckpts"

@@ -4,6 +4,7 @@ import os
 import sys
 import latent_preview
 import comfy
+import einops
 
 def common_ksampler(model, seed, steps, cfg, sampler_name, scheduler, positive, negative, latent, denoise=1.0, disable_noise=False, start_step=None, last_step=None, force_full_denoise=False):
     device = comfy.model_management.get_torch_device()
@@ -67,23 +68,27 @@ class Gradually_More_Denoise_KSampler:
     FUNCTION = "sample"
     CATEGORY = "ComfyUI Frame Interpolation"
 
-    def sample(self, model, positive, negative, latent_image, vae, 
-               seed, steps, cfg, sampler_name, scheduler,start_denoise, denoise_increment, denoise_steps):
-        if start_denoise + denoise_increment * denoise_steps > 1.0:
-            raise Exception(f"Max denoise strength can't over 1.0 (start_denoise={start_denoise}, denoise_increment={denoise_increment}, denoise_steps={denoise_steps}")
+    def sample(self, model, positive, negative, latent_image, optional_vae, 
+               seed, steps, cfg, sampler_name, scheduler,start_denoise, denoise_increment, denoise_increment_steps):
+        if start_denoise + denoise_increment * denoise_increment_steps > 1.0:
+            raise Exception(f"Max denoise strength can't over 1.0 (start_denoise={start_denoise}, denoise_increment={denoise_increment}, denoise_increment_steps={denoise_increment_steps}")
 
-        outs = []
-        for latent in latent_image:
-            out = latent.copy()
-            gradually_denoising_latents = [
-                common_ksampler(model, seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, denoise=start_denoise + denoise_increment * i)
-                for i in range(denoise_steps)
-            ]
-            samples = torch.cat(list(map(lambda x: x["samples"], gradually_denoising_latents)), dim=0)
-            out["samples"] = samples
+        copied_latent = latent_image.copy()
+        out_samples = []
         
-        outs = torch.cat(outs, dim=0)
-        return (model, positive, negative, outs, vae)
+        for latent_sample in copied_latent["samples"]:
+            latent = {"samples": einops.rearrange(latent_sample, "c h w -> 1 c h w")}
+            #Latent's shape is NCHW
+            gradually_denoising_samples = [
+                common_ksampler(
+                    model, seed, steps, cfg, sampler_name, scheduler, positive, negative, latent, denoise=start_denoise + denoise_increment * i
+                )[0]["samples"]
+                for i in range(denoise_increment_steps)
+            ]
+            out_samples.extend(gradually_denoising_samples)
+
+        copied_latent["samples"] = torch.cat(out_samples, dim=0)
+        return (model, positive, negative, copied_latent, optional_vae)
 
 NODE_CLASS_MAPPINGS = {
     "KSampler Gradually Adding More Denoise (efficient)": Gradually_More_Denoise_KSampler
