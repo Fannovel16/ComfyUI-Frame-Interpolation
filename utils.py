@@ -49,7 +49,5 @@ def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
 def load_file_from_github_release(model_type, ckpt_name):
     return load_file_from_url(BASE_MODEL_DOWNLOAD_URL + ckpt_name, get_ckpt_container_path(model_type))
 
-class FrameWrapper:
-    def __init__(self, frame_idx: typing.SupportsIndex, tensor: torch.Tensor) -> None:
-        self.frame_idx = frame_idx
-        self.tensor = tensor
+def load_file_from_direct_url(model_type, url):
+    return load_file_from_url(url, get_ckpt_container_path(model_type))

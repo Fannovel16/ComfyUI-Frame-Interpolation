@@ -18,7 +18,6 @@ class IFRNet_VFI:
                 "frames": ("IMAGE", ),
                 "multipler": ("INT", {"default": 2, "min": 1, "max": 1000}),
                 "scale_factor": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 100, "step": 0.1}),
-                "fast_mode": (["enabled", "disabled"], ),
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
