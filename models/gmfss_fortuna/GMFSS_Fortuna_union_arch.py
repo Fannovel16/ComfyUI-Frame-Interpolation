@@ -30,8 +30,7 @@ import re
 import torch
 import typing
 import math
-from .rife_arch import IFNet
-from .download import check_and_download
+from models.rife.rife_arch import IFNet
 
 device = torch.device("cuda")
 
@@ -2359,26 +2358,17 @@ class Model:
         self.feat_ext.to(device)
         self.fusionnet.to(device)
 
-    def load_model(self):
-        flownet_path = "models/GMFSS_fortuna_flownet.pkl"
-        check_and_download(flownet_path)
-        self.flownet.load_state_dict(torch.load(flownet_path))
-
-        ifnet_path = "models/rife46.pth"
-        check_and_download(ifnet_path)
-        self.ifnet.load_state_dict(torch.load(ifnet_path))
-
-        metricnet_path = "models/GMFSS_fortuna_union_metric.pkl"
-        check_and_download(metricnet_path)
-        self.metricnet.load_state_dict(torch.load(metricnet_path))
-
-        feat_path = "models/GMFSS_fortuna_union_feat.pkl"
-        check_and_download(feat_path)
-        self.feat_ext.load_state_dict(torch.load(feat_path))
-
-        fusionnet_path = "models/GMFSS_fortuna_union_fusionnet.pkl"
-        check_and_download(fusionnet_path)
-        self.fusionnet.load_state_dict(torch.load(fusionnet_path))
+    def load_model(self, path_dict):
+        #models/rife46.pth
+        self.ifnet.load_state_dict(torch.load(path_dict["ifnet"]))
+        #models/GMFSS_fortuna_flownet.pkl
+        self.flownet.load_state_dict(torch.load(path_dict["flownet"]))
+        #models/GMFSS_fortuna_union_metric.pkl
+        self.metricnet.load_state_dict(torch.load(path_dict["metricnet"]))
+        #models/GMFSS_fortuna_union_feat.pkl
+        self.feat_ext.load_state_dict(torch.load(path_dict["feat_ext"]))
+        #models/GMFSS_fortuna_union_fusionnet.pkl
+        self.fusionnet.load_state_dict(torch.load(path_dict["fusionnet"]))
 
     def reuse(self, img0, img1, scale):
         feat11, feat12, feat13 = self.feat_ext(img0)
@@ -2512,50 +2502,3 @@ class Model:
         )
 
         return torch.clamp(out, 0, 1)
-
-
-class Model_inference(nn.Module):
-    def __init__(self):
-        super(Model_inference, self).__init__()
-        self.model = Model()
-        self.model.eval()
-        self.model.device()
-        self.model.load_model()
-
-    def forward(self, I0, I1, timestep, scale=1.0):
-        n, c, h, w = I0.shape
-        tmp = max(64, int(64 / scale))
-        ph = ((h - 1) // tmp + 1) * tmp
-        pw = ((w - 1) // tmp + 1) * tmp
-        padding = (0, pw - w, 0, ph - h)
-        I0 = F.pad(I0, padding)
-        I1 = F.pad(I1, padding)
-        (
-            flow01,
-            flow10,
-            metric0,
-            metric1,
-            feat11,
-            feat12,
-            feat13,
-            feat21,
-            feat22,
-            feat23,
-        ) = self.model.reuse(I0, I1, scale=1.0)
-
-        output = self.model.inference(
-            I0,
-            I1,
-            flow01,
-            flow10,
-            metric0,
-            metric1,
-            feat11,
-            feat12,
-            feat13,
-            feat21,
-            feat22,
-            feat23,
-            timestep,
-        )
-        return output[0][:, :h, :w]

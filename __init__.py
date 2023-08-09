@@ -1,10 +1,12 @@
-import torch
-
 import os
 import sys
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
+import torch
 import latent_preview
 import comfy
 import einops
+from models.node_class_mappings import NODE_CLASS_MAPPINGS
 
 def common_ksampler(model, seed, steps, cfg, sampler_name, scheduler, positive, negative, latent, denoise=1.0, disable_noise=False, start_step=None, last_step=None, force_full_denoise=False):
     device = comfy.model_management.get_torch_device()
@@ -66,7 +68,7 @@ class Gradually_More_Denoise_KSampler:
     RETURN_NAMES = ("MODEL", "CONDITIONING+", "CONDITIONING-", "LATENT", "VAE", )
     OUTPUT_NODE = True
     FUNCTION = "sample"
-    CATEGORY = "ComfyUI Frame Interpolation"
+    CATEGORY = "ComfyUI-VFI"
 
     def sample(self, model, positive, negative, latent_image, optional_vae, 
                seed, steps, cfg, sampler_name, scheduler,start_denoise, denoise_increment, denoise_increment_steps):
@@ -91,5 +93,6 @@ class Gradually_More_Denoise_KSampler:
         return (model, positive, negative, copied_latent, optional_vae)
 
 NODE_CLASS_MAPPINGS = {
-    "KSampler Gradually Adding More Denoise (efficient)": Gradually_More_Denoise_KSampler
+    "KSampler Gradually Adding More Denoise (efficient)": Gradually_More_Denoise_KSampler,
+    **NODE_CLASS_MAPPINGS
 }

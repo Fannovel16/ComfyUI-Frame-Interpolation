@@ -10,7 +10,6 @@ import os
 import re
 import torch
 import typing
-from .download import check_and_download
 
 ##########################################################
 
@@ -1285,25 +1284,3 @@ def estimate(tenOne, tenTwo):
 
 
 # end
-
-
-class sepconv:
-    def __init__(self):
-        self.cache = False
-        self.amount_input_img = 2
-
-        torch.backends.cudnn.enabled = True
-        torch.backends.cudnn.benchmark = True
-
-        self.model = Network()
-        model_path = "/workspace/tensorrt/models/sepconv.pth"
-        check_and_download(model_path)
-        self.model.load_state_dict(torch.load(model_path))
-        self.model.eval()
-        self.model.cuda()
-
-    def execute(self, I0, I1, timestep):
-        n, c, h, w = I0.shape
-        with torch.inference_mode():
-            middle = self.model(I0, I1)
-        return middle[:, :, :h, :w].squeeze().cpu()

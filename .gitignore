@@ -1,1 +1,2 @@
-ckpts/*
+ckpts
+__pycache__

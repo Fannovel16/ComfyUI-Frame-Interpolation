@@ -35,7 +35,6 @@ import os
 from functools import partial
 import pathlib
 import PIL
-import matplotlib.pyplot as plt
 import re
 import requests
 from scipy.spatial.transform import Rotation
@@ -3180,17 +3179,3 @@ class RAFT(nn.Module):
             flow0 = flow0.flip(dims=(1,))
         out = self.raft(img1, img0, iters=iters, flow_init=flow0)
         return out[0].flip(dims=(1,)), (locals() if return_more else None)
-
-
-# wrapper
-def interpolate(raft, ssl, dtm, img0, img1, t=0.5, return_more=False):
-    with torch.no_grad():
-        flow0, _ = raft(img0, img1)
-        flow1, _ = raft(img1, img0)
-        x = {
-            "images": torch.stack([img0, img1], dim=1),
-            "flows": torch.stack([flow0, flow1], dim=1),
-        }
-        out_ssl, _ = ssl(x, t=t, return_more=True)
-        out_dtm, _ = dtm(x, out_ssl, _, return_more=return_more)
-    return out_dtm[0, :3]
