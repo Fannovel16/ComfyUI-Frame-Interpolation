@@ -4,10 +4,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import torch
 import PIL
-import torchvision
 import torchvision.transforms.functional as transform
 from models import gmfss_fortuna, ifrnet, ifunet, m2m, rife, sepconv, esai
-import einops
 
 frame_1 = transform.to_tensor(PIL.Image.open("frame1.png")).unsqueeze(0)
 frame_3 = transform.to_tensor(PIL.Image.open("frame3.png")).unsqueeze(0)
