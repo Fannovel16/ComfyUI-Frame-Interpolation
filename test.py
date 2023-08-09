@@ -9,8 +9,8 @@ import torchvision.transforms.functional as transform
 from models import gmfss_fortuna, ifrnet, ifunet, m2m, rife, sepconv, esai
 import einops
 
-frame_1 = transform.to_tensor(PIL.Image.open("C:\\Users\\Tai\\Downloads\\frame1.png")).unsqueeze(0)
-frame_3 = transform.to_tensor(PIL.Image.open("C:\\Users\\Tai\\Downloads\\frame3.png")).unsqueeze(0)
+frame_1 = transform.to_tensor(PIL.Image.open("frame1.png")).unsqueeze(0)
+frame_3 = transform.to_tensor(PIL.Image.open("frame3.png")).unsqueeze(0)
 
 vfi_node_class = sepconv.SepconvVFI()
 for i, ckpt_name in enumerate(vfi_node_class.INPUT_TYPES()["required"]["ckpt_name"][0]):
