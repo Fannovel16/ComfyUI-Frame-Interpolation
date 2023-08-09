@@ -1,1 +1,10 @@
+torch
+numpy
 einops
+cupy
+opencv-contrib-python
+kornia
+scipy
+PIL
+torchvision
+tqdm
