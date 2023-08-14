@@ -6,7 +6,7 @@ import einops
 import pathlib
 import typing
 from .flavr_arch import UNet_3D_3D
-from utils import load_file_from_github_release
+from utils import load_file_from_github_release, preprocess_frames
 
 NBR_FRAME = 4
 
@@ -98,4 +98,4 @@ class FLAVR_VFI:
                 #Dunno if this line is right lol
                 out_frames.extend([frames[frame_idx_batch[0]].unsqueeze(0), frames[frame_idx_batch[1]].unsqueeze(0)])
 
-        return torch.stack(out_frames)
+        return (torch.stack(out_frames), )

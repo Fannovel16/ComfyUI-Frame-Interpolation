@@ -2,7 +2,7 @@ import pathlib
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_direct_url
+from utils import load_file_from_direct_url, preprocess_frames
 import typing
 from .amt_arch import AMT_S, AMT_L, AMT_G, InputPadder
 
@@ -67,7 +67,7 @@ class AMT_VFI:
         model.load_state_dict(torch.load(model_path)["state_dict"])
         model.eval().cuda()
 
-        frames = frames.cuda()
+        frames = preprocess_frames(frames, "cuda")
         padder = InputPadder(frames[0].shape, 16)
         frames = torch.cat(padder.pad(*[frame.unsqueeze(0) for frame in frames]), dim=0)
         
@@ -95,5 +95,5 @@ class AMT_VFI:
                 )["imgt_pred"]
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
-        
-        return torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
+        out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
+        return (out_frames, )

@@ -34,7 +34,7 @@ def common_ksampler(model, seed, steps, cfg, sampler_name, scheduler, positive, 
                                   force_full_denoise=force_full_denoise, noise_mask=noise_mask, callback=callback, seed=seed)
     out = latent.copy()
     out["samples"] = samples
-    return (out, )
+    return (out_frames, )
 
 class Gradually_More_Denoise_KSampler:
     @classmethod

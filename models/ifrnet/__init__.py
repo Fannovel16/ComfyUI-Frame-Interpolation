@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release
+from utils import load_file_from_github_release, preprocess_frames
 import typing
 from .IFRNet_S_arch import IRFNet_S
 from .IFRNet_L_arch import IRFNet_L
@@ -44,7 +44,7 @@ class IFRNet_VFI:
         model.load_state_dict(torch.load(model_path))
         model.eval().cuda()
 
-        frames = frames.cuda()
+        frames = preprocess_frames(frames, "cuda")
         
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])
@@ -68,6 +68,7 @@ class IFRNet_VFI:
                 )
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
-        return torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
+        out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
+        return (out_frames, )
 
 

@@ -2,7 +2,7 @@ from .rife_arch import IFNet
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release
+from utils import load_file_from_github_release, preprocess_frames
 import typing
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
@@ -28,7 +28,7 @@ class RIFE_VFI:
                 "multipler": ("INT", {"default": 2, "min": 1}),
                 "scale_factor": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 100, "step": 0.1}),
                 "fast_mode": (["enabled", "disabled"], ),
-                "ensemble": (["enabled", "disabled"], )
+                "ensemble": (["enabled", "disabled"], {"default": "disabled"})
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
@@ -60,7 +60,7 @@ class RIFE_VFI:
         model.load_state_dict(torch.load(model_path))
         model.eval().cuda()
 
-        frames = frames.cuda()
+        frames = preprocess_frames(frames, "cuda")
         
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])
@@ -86,5 +86,5 @@ class RIFE_VFI:
                 )
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
-        
-        return torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
+        out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
+        return (out_frames, )

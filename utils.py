@@ -6,6 +6,8 @@ import torch
 import typing
 import traceback
 import einops
+import torchvision.transforms.functional as transform
+import numpy as np
 
 BASE_MODEL_DOWNLOAD_URLS = [
     "https://github.com/styler00dollar/VSGAN-tensorrt-docker/releases/download/models/",
@@ -85,3 +87,9 @@ def non_timestep_inference(model, I0, I1, multipler, **kwargs):
         batch_frames[i] = model(batch_frames[i - 1], batch_frames[-1], **kwargs)
 
     return torch.stack(batch_frames, dim=0)
+
+def preprocess_frames(frames, device):
+    return einops.rearrange(frames.to(device), "n h w c -> n c h w")
+
+def postprocess_frames(frames):
+    return einops.rearrange(frames, "n c h w -> n h w c").cpu()

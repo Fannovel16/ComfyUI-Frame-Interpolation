@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import einops
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release
+from utils import load_file_from_github_release, preprocess_frames
 import typing
 
 CKPT_CONFIGS = {
@@ -78,7 +78,7 @@ class XVFI:
         global model
         model = XVFI_Inference(model_path, ckpt_config)
 
-        frames = frames.cuda()
+        frames = preprocess_frames(frames, "cuda")
         #https://github.com/JihyongOh/XVFI/blob/main/main.py#L314
         divide = 2 ** (ckpt_config["S_tst"]) * ckpt_config["module_scale_factor"] * 4
         B, C, H, W = frames.size()
@@ -109,5 +109,6 @@ class XVFI:
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
         
-        return torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)[:, :, :H, :W]
+        out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)[:, :, :H, :W]
+        return (out_frames, )
         

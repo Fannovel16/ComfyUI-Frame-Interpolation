@@ -1,5 +1,5 @@
 import pathlib
-from utils import load_file_from_github_release
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
 import torch
 import torch.nn as nn
@@ -108,7 +108,8 @@ class GMFSS_Fortuna_VFI:
         global model
         model = CommonModelInference(model_type=ckpt_name)
         model.eval().cuda()
-        frames = frames.cuda()
+        print(frames.shape)
+        frames = preprocess_frames(frames, "cuda")
         
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])
@@ -126,11 +127,11 @@ class GMFSS_Fortuna_VFI:
             for middle_i in range(1, multipler):
                 _middle_frames = model(
                     frames[former_idxs_batch], 
-                    frames[former_idxs_batch + 1], 
+                    frames[former_idxs_batch + 1],
                     timestep=middle_i/multipler,
                     scale=scale_factor
                 )
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
-        
-        return torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
+        out = postprocess_frames(torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0))
+        return (out,)

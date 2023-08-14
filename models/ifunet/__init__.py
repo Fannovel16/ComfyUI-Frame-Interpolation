@@ -2,7 +2,7 @@ from .IFUNet_arch import IFUNetModel
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release
+from utils import load_file_from_github_release, preprocess_frames
 import typing
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
@@ -47,7 +47,7 @@ class IFUnet_VFI:
         model.load_state_dict(torch.load(model_path))
         model.eval().cuda()
 
-        frames = frames.cuda()
+        frames = preprocess_frames(frames, "cuda")
         
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])
@@ -72,6 +72,6 @@ class IFUnet_VFI:
                 )
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
-        
-        return torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
+        out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
+        return (out_frames, )
         
