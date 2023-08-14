@@ -3082,7 +3082,7 @@ class SoftsplatLite(nn.Module):
     def forward(self, x, t=0.5, k=5, return_more=False):
         rm = return_more
         flow0, flow1 = x["flows"].swapaxes(0, 1)
-        img0, img1 = x["images"][:, 0], x["images"][:, -1]
+        img0, img1 = x["IMAGE"][:, 0], x["IMAGE"][:, -1]
         (z0, z1), locs_z = self.z_metric(img0, img1, flow0, flow1, return_more=rm)
         img0 = torch.cat([img0, self.nedt(img0)[0]], dim=1)
         img1 = torch.cat([img1, self.nedt(img1)[0]], dim=1)

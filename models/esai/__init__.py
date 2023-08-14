@@ -33,7 +33,7 @@ class EISAI(nn.Module):
             flow0, _ = self.raft(img0, img1)
             flow1, _ = self.raft(img1, img0)
             x = {
-                "images": torch.stack([img0, img1], dim=1),
+                "IMAGE": torch.stack([img0, img1], dim=1),
                 "flows": torch.stack([flow0, flow1], dim=1),
             }
             out_ssl, _ = self.ssl(x, t=t, return_more=True)
@@ -55,7 +55,7 @@ class EISAI_VFI:
             }
         }
     
-    RETURN_TYPES = ("IMAGES", )
+    RETURN_TYPES = ("IMAGE", )
     FUNCTION = "vfi"
     CATEGORY = "ComfyUI-Frame-Interpolation/VFI"
 

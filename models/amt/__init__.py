@@ -46,7 +46,7 @@ class AMT_VFI:
             }
         }
     
-    RETURN_TYPES = ("IMAGES", )
+    RETURN_TYPES = ("IMAGE", )
     FUNCTION = "vfi"
     CATEGORY = "ComfyUI-Frame-Interpolation/VFI"
 
