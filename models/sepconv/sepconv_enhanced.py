@@ -2,6 +2,7 @@
 23-nov-21
 https://github.com/sniklaus/revisiting-sepconv/blob/fea509d98157170df1fb35bf615bd41d98858e1a/run.py
 https://github.com/sniklaus/revisiting-sepconv/blob/fea509d98157170df1fb35bf615bd41d98858e1a/sepconv/sepconv.py
+Deleted stuffs about arguments_strModel and getopt
 """
 #!/usr/bin/env python
 
@@ -535,7 +536,6 @@ class sepconv_func(torch.autograd.Function):
 
 import torch
 
-import getopt
 import math
 import numpy
 import os
@@ -559,27 +559,6 @@ torch.backends.cudnn.enabled = (
 )
 
 ##########################################################
-
-arguments_strModel = "paper"
-arguments_strOne = "./images/one.png"
-arguments_strTwo = "./images/two.png"
-arguments_strVideo = "./videos/car-turn.mp4"
-arguments_strOut = "./out.png"
-
-for strOption, strArgument in getopt.getopt(
-    sys.argv[1:], "", [strParameter[2:] + "=" for strParameter in sys.argv[1::2]]
-)[0]:
-    if strOption == "--model" and strArgument != "":
-        arguments_strModel = strArgument  # which model to use
-    if strOption == "--one" and strArgument != "":
-        arguments_strOne = strArgument  # path to the first frame
-    if strOption == "--two" and strArgument != "":
-        arguments_strTwo = strArgument  # path to the second frame
-    if strOption == "--video" and strArgument != "":
-        arguments_strVideo = strArgument  # path to a video
-    if strOption == "--out" and strArgument != "":
-        arguments_strOut = strArgument  # path to where the output should be stored
-# end
 
 ##########################################################
 
