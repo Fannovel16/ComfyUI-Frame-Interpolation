@@ -6,7 +6,7 @@ import einops
 import pathlib
 import typing
 from .flavr_arch import UNet_3D_3D
-from utils import load_file_from_github_release, preprocess_frames
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 
 NBR_FRAME = 4
 
@@ -75,6 +75,7 @@ class FLAVR_VFI:
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         global model
         model = FLAVR_Inference(model_path)
+        frames = preprocess_frames(frames, "cuda")
 
         if optional_interpolation_states is None:
             interpolation_states = [True] * (frames.shape[0] - 1)

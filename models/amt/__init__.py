@@ -2,7 +2,7 @@ import pathlib
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_direct_url, preprocess_frames
+from utils import load_file_from_direct_url, preprocess_frames, postprocess_frames
 import typing
 from .amt_arch import AMT_S, AMT_L, AMT_G, InputPadder
 
@@ -96,4 +96,4 @@ class AMT_VFI:
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
         out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
-        return (out_frames, )
+        return (postprocess_frames(out_frames), )

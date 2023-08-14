@@ -1,5 +1,5 @@
 import pathlib
-from utils import load_file_from_github_release, preprocess_frames
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
 import torch
 import torch.nn as nn
@@ -72,7 +72,6 @@ class EISAI_VFI:
         model.eval().cuda()
         frames = preprocess_frames(frames, "cuda")
         frames = F.interpolate(frames, size=(540, 960)) #EISAI forces the input to be 960x540 lol
-
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])
         }
@@ -95,4 +94,4 @@ class EISAI_VFI:
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
         out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
-        return (out_frames, )
+        return (postprocess_frames(out_frames), )

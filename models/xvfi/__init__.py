@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import einops
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release, preprocess_frames
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
 
 CKPT_CONFIGS = {
@@ -110,5 +110,5 @@ class XVFI:
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
         
         out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)[:, :, :H, :W]
-        return (out_frames, )
+        return (postprocess_frames(out_frames), )
         

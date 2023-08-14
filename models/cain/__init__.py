@@ -2,7 +2,7 @@ from .cain_arch import CAIN
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release, non_timestep_inference, preprocess_frames
+from utils import load_file_from_github_release, non_timestep_inference, preprocess_frames, postprocess_frames
 import typing
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
@@ -69,4 +69,4 @@ class CAINVFI:
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
         
         out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
-        return (out_frames, )
+        return (postprocess_frames(out_frames), )
