@@ -33,7 +33,7 @@ class EISAI(nn.Module):
             flow0, _ = self.raft(img0, img1)
             flow1, _ = self.raft(img1, img0)
             x = {
-                "IMAGE": torch.stack([img0, img1], dim=1),
+                "images": torch.stack([img0, img1], dim=1),
                 "flows": torch.stack([flow0, flow1], dim=1),
             }
             out_ssl, _ = self.ssl(x, t=t, return_more=True)
@@ -70,7 +70,7 @@ class EISAI_VFI:
         global model
         model = EISAI(MODEL_FILE_NAMES)
         model.eval().cuda()
-        frames.cuda()
+        frames = frames.cuda()
         frames = F.interpolate(frames, size=(540, 960)) #EISAI forces the input to be 960x540 lol
 
         frame_dict = {

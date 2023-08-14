@@ -47,7 +47,7 @@ class IFUnet_VFI:
         model.load_state_dict(torch.load(model_path))
         model.eval().cuda()
 
-        frames.cuda()
+        frames = frames.cuda()
         
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])

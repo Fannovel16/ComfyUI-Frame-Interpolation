@@ -108,7 +108,7 @@ class GMFSS_Fortuna_VFI:
         global model
         model = CommonModelInference(model_type=ckpt_name)
         model.eval().cuda()
-        frames.cuda()
+        frames = frames.cuda()
         
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])

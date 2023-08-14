@@ -67,7 +67,7 @@ class AMT_VFI:
         model.load_state_dict(torch.load(model_path)["state_dict"])
         model.eval().cuda()
 
-        frames.cuda()
+        frames = frames.cuda()
         padder = InputPadder(frames[0].shape, 16)
         frames = torch.cat(padder.pad(*[frame.unsqueeze(0) for frame in frames]), dim=0)
         
