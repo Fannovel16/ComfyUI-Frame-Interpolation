@@ -57,6 +57,7 @@ class EISAI_VFI:
     
     RETURN_TYPES = ("IMAGES", )
     FUNCTION = "vfi"
+    CATEGORY = "ComfyUI-Frame-Interpolation/VFI"
 
     def vfi(
         self,

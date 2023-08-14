@@ -61,6 +61,7 @@ class FLAVR_VFI:
     
     RETURN_TYPES = ("IMAGE", )
     FUNCTION = "vfi"
+    CATEGORY = "ComfyUI-Frame-Interpolation/VFI"
     
     def vfi(
         self,
