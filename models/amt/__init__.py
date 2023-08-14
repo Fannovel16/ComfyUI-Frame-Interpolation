@@ -35,7 +35,7 @@ class AMT_VFI:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "ckpt_name": (CKPT_CONFIGS.keys(), ),
+                "ckpt_name": (list(CKPT_CONFIGS.keys()), ),
                 "frames": ("IMAGE", ),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
                 "multipler": ("INT", {"default": 2, "min": 1}),

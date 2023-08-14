@@ -10,7 +10,7 @@ from .GMFSS_Fortuna_union_arch import Model as GMFSS_Union
 
 
 GLOBAL_MODEL_TYPE = pathlib.Path(__file__).parent.name
-MODELS_PATH_CONFIG = {
+CKPTS_PATH_CONFIG = {
     "GMFSS_fortuna_union": {
         "ifnet": ("rife", "rife46.pth"),
         "flownet": (GLOBAL_MODEL_TYPE, "GMFSS_fortuna_flownet.pkl"),
@@ -32,7 +32,7 @@ class CommonModelInference(nn.Module):
         self.model = GMFSS_Union() if "union" in model_type else GMFSS()
         self.model.eval()
         self.model.device()
-        _model_path_config = MODELS_PATH_CONFIG[model_type]
+        _model_path_config = CKPTS_PATH_CONFIG[model_type]
         self.model.load_model({
             key: load_file_from_github_release(*_model_path_config[key])
             for key in _model_path_config
@@ -81,7 +81,7 @@ class GMFSS_Fortuna_VFI:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "ckpt_name": (MODELS_PATH_CONFIG.keys(), ),
+                "ckpt_name": (list(CKPTS_PATH_CONFIG.keys()), ),
                 "frames": ("IMAGE", ),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
                 "multipler": ("INT", {"default": 2, "min": 2, "max": 1000}),
