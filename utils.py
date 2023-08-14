@@ -4,8 +4,13 @@ from torch.hub import download_url_to_file, get_dir
 from urllib.parse import urlparse
 import torch
 import typing
+import traceback
+import einops
 
-BASE_MODEL_DOWNLOAD_URL = "https://github.com/styler00dollar/VSGAN-tensorrt-docker/releases/download/models/"
+BASE_MODEL_DOWNLOAD_URLS = [
+    "https://github.com/styler00dollar/VSGAN-tensorrt-docker/releases/download/models/",
+    "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/releases/download/models/"
+]
 config_path = os.path.join(os.path.dirname(__file__), "./config.yaml")
 if os.path.exists(config_path):
     config = yaml.load(open(config_path, "r"), Loader=yaml.FullLoader)
@@ -47,7 +52,36 @@ def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
     return cached_file
 
 def load_file_from_github_release(model_type, ckpt_name):
-    return load_file_from_url(BASE_MODEL_DOWNLOAD_URL + ckpt_name, get_ckpt_container_path(model_type))
+    error_strs = []
+    for i, base_model_download_url in enumerate(BASE_MODEL_DOWNLOAD_URLS):
+        try:
+            return load_file_from_url(base_model_download_url + ckpt_name, get_ckpt_container_path(model_type))
+        except Exception:
+            traceback_str = traceback.format_exc()
+            if i < len(BASE_MODEL_DOWNLOAD_URLS) - 1:
+                print("Failed! Trying another endpoint.")
+            error_strs.append(f"Error when downloading from: {base_model_download_url + ckpt_name}\n\n{traceback_str}")
+
+    error_str = '\n\n'.join(error_strs)
+    raise Exception(f"Tried all GitHub base urls to download {ckpt_name} but no suceess. Below is the error log:\n\n{error_str}")
+                
 
 def load_file_from_direct_url(model_type, url):
     return load_file_from_url(url, get_ckpt_container_path(model_type))
+
+
+def non_timestep_inference(model, I0, I1, multipler, **kwargs):
+    """
+    Return shape: (T, N, C, H, W), T = multipler - 1
+    """
+    batch_frames = [I0] + [None] * (multipler - 1) + [I1]
+    middle_i = len(batch_frames) // 2
+    batch_frames[middle_i] = model(I0, I1)
+
+    for i in range(middle_i - 1, 0, -1):
+        batch_frames[i] = model(batch_frames[0], batch_frames[i + 1], **kwargs)
+
+    for i in range(middle_i + 1, len(batch_frames) - 1):
+        batch_frames[i] = model(batch_frames[i - 1], batch_frames[-1], **kwargs)
+
+    return torch.stack(batch_frames, dim=0)

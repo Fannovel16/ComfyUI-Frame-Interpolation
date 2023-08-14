@@ -84,7 +84,7 @@ class GMFSS_Fortuna_VFI:
                 "ckpt_name": (MODELS_PATH_CONFIG.keys(), ),
                 "frames": ("IMAGE", ),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
-                "multipler": ("INT", {"default": 2, "min": 1, "max": 1000}),
+                "multipler": ("INT", {"default": 2, "min": 2, "max": 1000}),
                 "scale_factor": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 100, "step": 0.1}),
             },
             "optional": {

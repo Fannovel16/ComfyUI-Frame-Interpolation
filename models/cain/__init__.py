@@ -1,15 +1,16 @@
+from .cain_arch import CAIN
+from utils import non_timestep_inference
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release
+from utils import load_file_from_github_release, non_timestep_inference
 import typing
-from .IFRNet_S_arch import IRFNet_S
-from .IFRNet_L_arch import IRFNet_L
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
-CKPT_NAMES = ["IFRNet_S_Vimeo90K.pth", "IFRNet_L_Vimeo90K.pth"]
+CKPT_NAMES = ["pretrained_cain.pth"]
 
-class IFRNet_VFI:
+
+class CAINVFI:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -17,31 +18,34 @@ class IFRNet_VFI:
                 "ckpt_name": (CKPT_NAMES, ),
                 "frames": ("IMAGE", ),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
-                "multipler": ("INT", {"default": 2, "min": 2, "max": 1000}),
-                "scale_factor": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 100, "step": 0.1}),
+                "multipler": ("INT", {"default": 2, "min": 2, "max": 1000})
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
             }
         }
     
-    RETURN_TYPES = ("IMAGES", )
+    RETURN_TYPES = ("IMAGE", )
     FUNCTION = "vfi"
-
+    
     def vfi(
         self,
         ckpt_name: typing.AnyStr, 
         frames: torch.Tensor, 
         batch_size: typing.SupportsInt = 1,
         multipler: typing.SupportsInt = 2,
-        scale_factor: typing.SupportsFloat = 1.0,
         optional_interpolation_states: typing.Optional[list[bool]] = None
     ):
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
+        sd = torch.load(model_path)["state_dict"]
+        sd = {key.replace('module.', ''): value for key, value in sd.items()}
+
+
         global model
-        model = IRFNet_S() if 'S' in ckpt_name else IRFNet_L()
-        model.load_state_dict(torch.load(model_path))
+        model = CAIN(depth=3)
+        model.load_state_dict(sd)
         model.eval().cuda()
+        del sd
 
         frames.cuda()
         
@@ -58,15 +62,10 @@ class IFRNet_VFI:
         former_idxs_loader = DataLoader(enabled_former_idxs, batch_size=batch_size)
 
         for former_idxs_batch in former_idxs_loader:
-            for middle_i in range(1, multipler):
-                _middle_frames = model(
-                    frames[former_idxs_batch], 
-                    frames[former_idxs_batch + 1], 
-                    timestep=middle_i/multipler,
-                    scale_factor=scale_factor
-                )
+            middle_frame_batches = non_timestep_inference(lambda I0, I1: model(I0, I1)[0], frames[former_idxs_batch], frames[former_idxs_batch + 1], multipler)
+            for middle_i in range(1, multipler - 1):
+                _middle_frames = middle_frame_batches[middle_i - 1]
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
+        
         return torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
-
-

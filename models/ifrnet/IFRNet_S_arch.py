@@ -234,7 +234,8 @@ class IRFNet_S(nn.Module):
         img0 = F.pad(img0, padding)
         img1 = F.pad(img1, padding)
 
-        embt = torch.tensor(timestep).view(1, 1, 1, 1).float().cuda()
+        #Support multiple batches
+        embt = torch.tensor([timestep] * n).view(n, 1, 1, 1).float().cuda()
         if img0.type() == "torch.cuda.HalfTensor":
             embt = embt.half()
 

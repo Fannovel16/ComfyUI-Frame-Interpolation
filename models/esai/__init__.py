@@ -26,6 +26,7 @@ class EISAI(nn.Module):
 
         self.dtm = DTM()
         self.dtm.load_state_dict(torch.load(load_file_from_github_release(MODEL_TYPE, model_file_names["dtm"])))
+        self.dtm.cuda().eval()
     
     def forward(self, img0, img1, t):
         with torch.no_grad():
@@ -47,7 +48,7 @@ class EISAI_VFI:
                 "ckpt_name": (["eisai"], ),
                 "frames": ("IMAGE", ),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
-                "multipler": ("INT", {"default": 2, "min": 1, "max": 1000})
+                "multipler": ("INT", {"default": 2, "min": 2, "max": 1000})
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
@@ -69,7 +70,7 @@ class EISAI_VFI:
         model = EISAI(MODEL_FILE_NAMES)
         model.eval().cuda()
         frames.cuda()
-        frames = F.interpolate(frames, size=(540, 960)) #EISAI forces the input to be 540x960 lol
+        frames = F.interpolate(frames, size=(540, 960)) #EISAI forces the input to be 960x540 lol
 
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])

@@ -7,7 +7,7 @@ import typing
 from .amt_arch import AMT_S, AMT_L, AMT_G, InputPadder
 
 #https://github.com/MCG-NKU/AMT/tree/main/cfgs
-MODEL_CONFIGS = {
+CKPT_CONFIGS = {
     "amt-s.pth": {
         "network": AMT_S,
         "params": { "corr_radius": 3, "corr_lvls": 4, "num_flows": 3 }
@@ -35,7 +35,7 @@ class AMT_VFI:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "ckpt_name": (MODEL_CONFIGS.keys(), ),
+                "ckpt_name": (CKPT_CONFIGS.keys(), ),
                 "frames": ("IMAGE", ),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
                 "multipler": ("INT", {"default": 2, "min": 1}),
@@ -59,10 +59,10 @@ class AMT_VFI:
         optional_interpolation_states: typing.Optional[list[bool]] = None
     ):
         model_path = load_file_from_direct_url(MODEL_TYPE, f"https://huggingface.co/lalala125/AMT/resolve/main/{ckpt_name}")
-        model_config = MODEL_CONFIGS[ckpt_name]
+        ckpt_config = CKPT_CONFIGS[ckpt_name]
 
         global model
-        model = model_config["network"](**model_config["params"])
+        model = ckpt_config["network"](**ckpt_config["params"])
         model.load_state_dict(torch.load(model_path)["state_dict"])
         model.eval().cuda()
 
