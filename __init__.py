@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from .other_nodes import Gradually_More_Denoise_KSampler
 
-from models.esai import EISAI_VFI
+#from models.esai import EISAI_VFI
 from models.gmfss_fortuna import GMFSS_Fortuna_VFI
 from models.ifrnet import IFRNet_VFI
 from models.ifunet import IFUnet_VFI
@@ -15,7 +15,7 @@ from models.amt import AMT_VFI
 
 NODE_CLASS_MAPPINGS = {
     "KSampler Gradually Adding More Denoise (efficient)": Gradually_More_Denoise_KSampler,
-    "ESAI VFI": EISAI_VFI,
+    #"ESAI VFI": EISAI_VFI,
     "GMFSS Fortuna VFI": GMFSS_Fortuna_VFI,
     "IFRNet VFI": IFRNet_VFI,
     "IFUnet VFI": IFUnet_VFI,

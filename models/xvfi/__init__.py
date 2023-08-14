@@ -61,7 +61,7 @@ class XVFI:
             }
         }
     
-    RETURN_TYPES = ("IMAGES", )
+    RETURN_TYPES = ("IMAGE", )
     FUNCTION = "vfi"
     CATEGORY = "ComfyUI-Frame-Interpolation/VFI"
 
@@ -78,7 +78,7 @@ class XVFI:
         global model
         model = XVFI_Inference(model_path, ckpt_config)
 
-        frames.cuda()
+        frames = frames.cuda()
         #https://github.com/JihyongOh/XVFI/blob/main/main.py#L314
         divide = 2 ** (ckpt_config["S_tst"]) * ckpt_config["module_scale_factor"] * 4
         B, C, H, W = frames.size()

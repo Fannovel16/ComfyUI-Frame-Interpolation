@@ -25,7 +25,7 @@ class M2M_VFI:
             }
         }
     
-    RETURN_TYPES = ("IMAGES", )
+    RETURN_TYPES = ("IMAGE", )
     FUNCTION = "vfi"
     CATEGORY = "ComfyUI-Frame-Interpolation/VFI"
 
@@ -43,7 +43,7 @@ class M2M_VFI:
         model.load_state_dict(torch.load(model_path))
         model.eval().cuda()
 
-        frames.cuda()
+        frames = frames.cuda()
         
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])

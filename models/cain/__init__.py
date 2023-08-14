@@ -48,7 +48,7 @@ class CAINVFI:
         model.eval().cuda()
         del sd
 
-        frames.cuda()
+        frames = frames.cuda()
         
         frame_dict = {
             str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])

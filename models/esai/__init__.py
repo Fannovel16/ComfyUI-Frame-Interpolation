@@ -55,7 +55,7 @@ class EISAI_VFI:
             }
         }
     
-    RETURN_TYPES = ("IMAGES", )
+    RETURN_TYPES = ("IMAGE", )
     FUNCTION = "vfi"
     CATEGORY = "ComfyUI-Frame-Interpolation/VFI"
 
@@ -70,7 +70,7 @@ class EISAI_VFI:
         global model
         model = EISAI(MODEL_FILE_NAMES)
         model.eval().cuda()
-        frames.cuda()
+        frames = frames.cuda()
         frames = F.interpolate(frames, size=(540, 960)) #EISAI forces the input to be 960x540 lol
 
         frame_dict = {
