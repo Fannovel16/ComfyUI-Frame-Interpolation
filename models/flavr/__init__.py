@@ -99,4 +99,4 @@ class FLAVR_VFI:
                 #Dunno if this line is right lol
                 out_frames.extend([frames[frame_idx_batch[0]].unsqueeze(0), frames[frame_idx_batch[1]].unsqueeze(0)])
 
-        return (torch.stack(out_frames), )
+        return (postprocess_frames(torch.stack(out_frames)), )
