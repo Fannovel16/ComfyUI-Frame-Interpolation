@@ -1,7 +1,6 @@
 torch
 numpy
 einops
-cupy-wheel
 opencv-contrib-python
 kornia
 scipy
