@@ -58,7 +58,7 @@ class SepconvVFI:
 
         for former_idxs_batch in former_idxs_loader:
             middle_frame_batches = non_timestep_inference(model, frames[former_idxs_batch], frames[former_idxs_batch + 1], multipler)
-            for middle_i in range(1, multipler - 1):
+            for middle_i in range(1, multipler):
                 _middle_frames = middle_frame_batches[middle_i - 1]
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
