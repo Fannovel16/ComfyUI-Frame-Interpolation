@@ -84,7 +84,7 @@ class GMFSS_Fortuna_VFI:
                 "ckpt_name": (list(CKPTS_PATH_CONFIG.keys()), ),
                 "frames": ("IMAGE", ),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
-                "multipler": ("INT", {"default": 2, "min": 2, "max": 1000}),
+                "multiplier": ("INT", {"default": 2, "min": 2, "max": 1000}),
                 "scale_factor": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 100, "step": 0.1}),
             },
             "optional": {
@@ -101,7 +101,7 @@ class GMFSS_Fortuna_VFI:
         ckpt_name: typing.AnyStr,
         frames: torch.Tensor,
         batch_size: typing.SupportsInt = 1,
-        multipler: typing.SupportsInt = 2,
+        multiplier: typing.SupportsInt = 2,
         scale_factor: typing.SupportsFloat = 1,
         optional_interpolation_states: typing.Optional[typing.List[bool]] = None
     ):
@@ -124,14 +124,84 @@ class GMFSS_Fortuna_VFI:
         former_idxs_loader = DataLoader(enabled_former_idxs, batch_size=batch_size)
         
         for former_idxs_batch in former_idxs_loader:
-            for middle_i in range(1, multipler):
+            for middle_i in range(1, multiplier):
                 _middle_frames = model(
                     frames[former_idxs_batch], 
                     frames[former_idxs_batch + 1],
-                    timestep=middle_i/multipler,
+                    timestep=middle_i/multiplier,
                     scale=scale_factor
                 )
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
         out = postprocess_frames(torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0))
+        return (out,)
+    
+class GMFSS_Fortuna_VFI_Animation:
+    @classmethod
+    # A modified node specifically made for animations, such as from AnimateDiff
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "ckpt_name": (list(CKPTS_PATH_CONFIG.keys()), ),
+                "frames": ("IMAGE", ),
+                "clear_cache_after_batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
+                "multiplier": ("INT", {"default": 2, "min": 2, "max": 1000}),
+            },
+        }
+    
+    RETURN_TYPES = ("IMAGE", )
+    FUNCTION = "vfi"
+    CATEGORY = "ComfyUI-Frame-Interpolation/VFI"
+
+    def vfi(
+        self,
+        ckpt_name: typing.AnyStr,
+        frames: torch.Tensor,
+        clear_cache_after_batch_size: typing.SupportsInt = 1,
+        multiplier: typing.SupportsInt = 2,
+    ):
+        global model
+        model = CommonModelInference(model_type=ckpt_name)
+        model.eval().cuda()
+        print(frames.shape)
+        frames = preprocess_frames(frames, "cuda")
+        
+        # Ensure proper tensor dimensions
+        frames = [frame.unsqueeze(0) for frame in frames]
+        
+        output_frames = []  # List to store processed frames in the correct order
+        dim = 0
+        
+        # Number of batches completed
+        batch_count = 0
+    
+        for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
+            frame_0 = frames[frame_itr]
+            output_frames.append(frame_0) # Start with first frame
+            
+            # Generate and append a batch of middle frames
+            middle_frames_batch = []
+    
+            # Generate and append a middle frame per multiplier - 1
+            for middle_i in range(1, multiplier):
+                middle_frame = model(
+                    frame_0, 
+                    frames[frame_itr + 1],
+                    timestep=middle_i/multiplier,
+                    scale=1
+                )
+                middle_frames_batch.append(middle_frame)
+                
+            # Extend output array by batch
+            output_frames.extend(middle_frames_batch)
+            
+            batch_count += 1
+                
+            if batch_count >= clear_cache_after_batch_size:
+                # Clear the CUDA cache if number of completed batches meets or exceeds specified batch_count
+                torch.cuda.empty_cache()
+                    
+        output_frames.append(frames[-1]) # Append final frame
+    
+        out = postprocess_frames(torch.cat(output_frames, dim=0))
         return (out,)
