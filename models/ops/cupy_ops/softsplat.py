@@ -437,4 +437,4 @@ def softsplat(
 
 # end
 
-__all__ = ["FunctionSoftsplat", "ModuleSoftsplat", "softsplat"]
+__all__ = ["FunctionSoftsplat", "ModuleSoftsplat", "softsplat", "softsplat_func"]
