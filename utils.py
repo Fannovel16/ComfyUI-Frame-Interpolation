@@ -93,3 +93,48 @@ def preprocess_frames(frames, device):
 
 def postprocess_frames(frames):
     return einops.rearrange(frames, "n c h w -> n h w c").cpu()
+
+def generic_frame_loop(
+        frames,
+        clear_cache_after_n_frames,
+        multiplier: typing.SupportsInt,
+        return_middle_frame_function,
+        *return_middle_frame_function_args):
+    
+    output_frames = []  # List to store processed frames in the correct order
+
+    number_of_frames_processed_since_last_cleared_cuda_cache = 0
+    
+    for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
+        frame_0 = frames[frame_itr]
+        output_frames.append(frame_0) # Start with first frame
+        
+        # Generate and append a batch of middle frames
+        middle_frames_batch = []
+
+        # Generate and append a middle frame per multiplier - 1
+        for middle_i in range(1, multiplier):
+            timestep = middle_i/multiplier
+            
+            middle_frame = return_middle_frame_function(
+                frame_0, 
+                frames[frame_itr + 1],
+                timestep,
+                *return_middle_frame_function_args
+            )
+            middle_frames_batch.append(middle_frame)
+            
+        # Extend output array by batch
+        output_frames.extend(middle_frames_batch)
+
+        # Try to avoid a memory overflow by clearing cuda cache regularly
+        if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
+            torch.cuda.empty_cache()
+            number_of_frames_processed_since_last_cleared_cuda_cache = 0
+                
+    output_frames.append(frames[-1]) # Append final frame
+    out = torch.cat(output_frames, dim=0)
+    # clear cache for courtesy
+    torch.cuda.empty_cache()
+    return out
+    
