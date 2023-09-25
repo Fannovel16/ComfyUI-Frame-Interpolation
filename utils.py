@@ -107,7 +107,7 @@ def generic_frame_loop(
     number_of_frames_processed_since_last_cleared_cuda_cache = 0
     
     for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
-        if interpolation_states is not None and interpolation_states[frame_itr]:
+        if interpolation_states is None or interpolation_states[frame_itr]:
             frame_0 = frames[frame_itr]
             output_frames.append(frame_0) # Start with first frame
             

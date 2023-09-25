@@ -26,8 +26,8 @@ class RIFE_VFI:
                 "frames": ("IMAGE", ),
                 "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
                 "multiplier": ("INT", {"default": 2, "min": 1}),
-                "fast_mode": ("BOOLEAN", {"default":False}),
-                "ensemble": ("BOOLEAN", {"default":False}),
+                "fast_mode": ("BOOLEAN", {"default":True}),
+                "ensemble": ("BOOLEAN", {"default":True}),
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
