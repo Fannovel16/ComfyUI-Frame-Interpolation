@@ -28,6 +28,9 @@ class RIFE_VFI:
                 "multiplier": ("INT", {"default": 2, "min": 1}),
                 "fast_mode": ("BOOLEAN", {"default":False}),
                 "ensemble": ("BOOLEAN", {"default":False}),
+            },
+            "optional": {
+                "optional_interpolation_states": ("INTERPOLATION_STATES", ),
             }
         }
     
@@ -42,7 +45,8 @@ class RIFE_VFI:
         clear_cache_after_n_frames = 10,
         multiplier: typing.SupportsInt = 2,
         fast_mode = False,
-        ensemble = False        
+        ensemble = False,
+        optional_interpolation_states: typing.Optional[list[bool]] = None    
     ):
         """
         Perform video frame interpolation using a given checkpoint model.
@@ -85,6 +89,7 @@ class RIFE_VFI:
         
         args = [interpolation_model, scale_list, fast_mode, ensemble]
         out = postprocess_frames(
-            generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args),
+            generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
+                               interpolation_states=optional_interpolation_states)
         )
         return (out,)

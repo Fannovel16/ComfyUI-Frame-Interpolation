@@ -86,6 +86,9 @@ class GMFSS_Fortuna_VFI:
                 "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
                 "multiplier": ("INT", {"default": 2, "min": 2, "max": 1000}),
             },
+            "optional": {
+                "optional_interpolation_states": ("INTERPOLATION_STATES", ),
+            }
         }
     
     RETURN_TYPES = ("IMAGE", )
@@ -98,6 +101,7 @@ class GMFSS_Fortuna_VFI:
         frames: torch.Tensor,
         clear_cache_after_n_frames = 10,
         multiplier: typing.SupportsInt = 2,
+        optional_interpolation_states: typing.Optional[list[bool]] = None   
     ):
         """
         Perform video frame interpolation using a given checkpoint model.
@@ -136,6 +140,7 @@ class GMFSS_Fortuna_VFI:
         
         args = [interpolation_model, scale]
         out = postprocess_frames(
-            generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args)
+            generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
+                               interpolation_states=optional_interpolation_states)
         )
         return (out,)
