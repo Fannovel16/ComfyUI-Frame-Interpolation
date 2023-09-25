@@ -19,6 +19,42 @@ if os.path.exists(config_path):
 else:
     raise Exception("config.yaml file is neccessary, plz recreate the config file by downloading it from https://github.com/Fannovel16/ComfyUI-Frame-Interpolation")
 
+
+class InterpolationStateList():
+
+    def __init__(self, frame_indices: typing.List[int], is_skip_list: bool):
+        self.frame_indices = frame_indices
+        self.is_skip_list = is_skip_list
+        
+    def is_frame_skipped(self, frame_index):
+        is_frame_in_list = frame_index in self.frame_indices
+        return self.is_skip_list and is_frame_in_list or not self.is_skip_list and not is_frame_in_list
+    
+
+class MakeInterpolationStateList:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "frame_indices": ("STRING", {"multiline": True, "default": "1,2,3"}),
+                "is_skip_list": ("BOOLEAN", {"default": True},),
+            },
+        }
+    
+    RETURN_TYPES = ("INTERPOLATION_STATES",)
+    FUNCTION = "create_options"
+    CATEGORY = "ComfyUI-Frame-Interpolation/VFI"    
+
+    def create_options(self, frame_indices: str, is_skip_list: bool):
+        frame_indices_list = [int(item) for item in frame_indices.split(',')]
+        
+        interpolation_state_list = InterpolationStateList(
+            frame_indices=frame_indices_list,
+            is_skip_list=is_skip_list,
+        )
+        return (interpolation_state_list,)
+        
+        
 def get_ckpt_container_path(model_type):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), config["ckpts_path"], model_type))
 
@@ -93,3 +129,52 @@ def preprocess_frames(frames, device):
 
 def postprocess_frames(frames):
     return einops.rearrange(frames, "n c h w -> n h w c").cpu()
+
+def generic_frame_loop(
+        frames,
+        clear_cache_after_n_frames,
+        multiplier: typing.SupportsInt,
+        return_middle_frame_function,
+        *return_middle_frame_function_args,
+        interpolation_states: InterpolationStateList = None):
+    
+    output_frames = []  # List to store processed frames in the correct order
+
+    number_of_frames_processed_since_last_cleared_cuda_cache = 0
+    
+    for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
+       
+        frame_0 = frames[frame_itr]
+        output_frames.append(frame_0) # Start with first frame
+        
+        if interpolation_states is None or not interpolation_states.is_frame_skipped(frame_itr):
+            
+            # Generate and append a batch of middle frames
+            middle_frames_batch = []
+    
+            # Generate and append a middle frame per multiplier - 1
+            for middle_i in range(1, multiplier):
+                timestep = middle_i/multiplier
+                
+                middle_frame = return_middle_frame_function(
+                    frame_0, 
+                    frames[frame_itr + 1],
+                    timestep,
+                    *return_middle_frame_function_args
+                )
+                middle_frames_batch.append(middle_frame)
+                
+            # Extend output array by batch
+            output_frames.extend(middle_frames_batch)
+    
+            # Try to avoid a memory overflow by clearing cuda cache regularly
+            if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
+                torch.cuda.empty_cache()
+                number_of_frames_processed_since_last_cleared_cuda_cache = 0
+                
+    output_frames.append(frames[-1]) # Append final frame
+    out = torch.cat(output_frames, dim=0)
+    # clear cache for courtesy
+    torch.cuda.empty_cache()
+    return out
+    

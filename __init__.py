@@ -12,7 +12,8 @@ from models.m2m import M2M_VFI
 from models.rife import RIFE_VFI
 from models.sepconv import SepconvVFI
 from models.amt import AMT_VFI
-
+from utils import MakeInterpolationStateList
+    
 NODE_CLASS_MAPPINGS = {
     "KSampler Gradually Adding More Denoise (efficient)": Gradually_More_Denoise_KSampler,
     #"ESAI VFI": EISAI_VFI,
@@ -22,5 +23,6 @@ NODE_CLASS_MAPPINGS = {
     "M2M VFI": M2M_VFI,
     "RIFE VFI": RIFE_VFI,
     "Sepconv VFI": SepconvVFI,
-    "AMT VFI": AMT_VFI
+    "AMT VFI": AMT_VFI,
+    "Make Interpolation State List": MakeInterpolationStateList,
 }
