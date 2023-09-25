@@ -4,24 +4,20 @@ import torch.multiprocessing as mp
 from .process_worker import f
 from .utils import to_shared_memory
 
-queue, process, recieved_event = None, None, None
+parent_conn, child_conn, process = None, None, None
 device = model_management.get_torch_device()
 
 def req_to_taichi_process(op_name, *tensors):
-    global queue, process, recieved_event
-    if queue is None:
+    global parent_conn, child_conn, process
+    if parent_conn is None:
         mp.set_start_method('spawn', force=True)
-        queue = mp.Queue()
-        recieved_event = mp.Event()
-        recieved_event.clear()
-        process = mp.Process(target=f, args=(queue, recieved_event, device))
+        parent_conn, child_conn = mp.Pipe()
+        process = mp.Process(target=f, args=(child_conn, device))
         process.start()
     
     tensors = to_shared_memory(tensors)
-    queue.put((op_name, tensors))
-    recieved_event.wait()
-    recieved_event.clear()
-    result = queue.get()
+    parent_conn.send((op_name, tensors))
+    result = parent_conn.recv()
     del tensors
     
     if type(result) not in [tuple, list]:

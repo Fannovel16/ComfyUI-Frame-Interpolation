@@ -7,12 +7,11 @@ from .utils import to_shared_memory, to_device
 import taichi as ti
 import traceback
 
-def f(queue: mp.Queue, recieved_event: mp.Event, device: torch.DeviceObjType):
+def f(child_conn, device: torch.DeviceObjType):
     ti.init(arch=ti.gpu)
     while True:
-        op_name, tensors = queue.get()
+        op_name, tensors = child_conn.recv()
         tensors = to_device(tensors, device)
-        recieved_event.set()
         try:
             if "softsplat" in op_name:
                 result = raw_softsplat(op_name, tensors)
@@ -22,6 +21,6 @@ def f(queue: mp.Queue, recieved_event: mp.Event, device: torch.DeviceObjType):
                 result = sepconv(op_name, tensors)
             else:
                 raise NotImplementedError(op_name)
-            queue.put(to_shared_memory(result))
+            child_conn.send(to_shared_memory(result))
         except:
-            queue.put(traceback.format_exc())
+            child_conn.send(traceback.format_exc())
