@@ -329,3 +329,4 @@ class sepconv_func(torch.autograd.Function):
 
 
 # end
+__all__ = ["sepconv_func"]

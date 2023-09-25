@@ -1,25 +1,33 @@
-from .taichi_ops import softsplat_worker
 import comfy.model_management as model_management
 import torch
 import torch.multiprocessing as mp
+from .process_worker import f
+from .utils import to_shared_memory
 
 queue, process, recieved_event = None, None, None
-
 device = model_management.get_torch_device()
-def send_recieve_softsplat(tenIn, tenFlow):
+
+def req_to_taichi_process(op_name, *tensors):
     global queue, process, recieved_event
     if queue is None:
         mp.set_start_method('spawn', force=True)
         queue = mp.Queue()
         recieved_event = mp.Event()
         recieved_event.clear()
-        process = mp.Process(target=softsplat_worker, args=(queue, recieved_event, device))
+        process = mp.Process(target=f, args=(queue, recieved_event, device))
         process.start()
     
-    queue.put((tenIn.cpu(), tenFlow.cpu()))
+    tensors = to_shared_memory(tensors)
+    queue.put((op_name, tensors))
     recieved_event.wait()
     recieved_event.clear()
-    return queue.get().to(model_management.get_torch_device())
+    result = queue.get()
+    del tensors
+    
+    if type(result) not in [tuple, list]:
+        raise Exception(result)
+        
+    return [tensor.to(device) for tensor in result]
 
 def softsplat(
     tenIn: torch.Tensor, tenFlow: torch.Tensor, tenMetric: torch.Tensor, strMode: str
@@ -52,7 +60,7 @@ def softsplat(
 
     # end
 
-    tenOut = send_recieve_softsplat(tenIn, tenFlow)
+    tenOut = req_to_taichi_process("softsplat_out", tenIn, tenFlow)[0]
 
     if strMode.split("-")[0] in ["avg", "linear", "soft"]:
         tenNormalize = tenOut[:, -1:, :, :]
@@ -99,7 +107,7 @@ def FunctionSoftsplat(tenInput, tenFlow, tenMetric, strType):
 
     # end
 
-    tenOutput = send_recieve_softsplat(tenInput, tenFlow)
+    tenOutput = req_to_taichi_process("softsplat_out", tenInput, tenFlow)[0]
 
     if strType != "summation":
         tenNormalize = tenOutput[:, -1:, :, :]
@@ -117,7 +125,7 @@ def FunctionSoftsplat(tenInput, tenFlow, tenMetric, strType):
 
 class ModuleSoftsplat(torch.nn.Module):
     def __init__(self, strType):
-        super().__init__()
+        super(self).__init__()
 
         self.strType = strType
 
@@ -126,12 +134,21 @@ class ModuleSoftsplat(torch.nn.Module):
     def forward(self, tenInput, tenFlow, tenMetric):
         return FunctionSoftsplat(tenInput, tenFlow, tenMetric, self.strType)
 
-    # end
+def softsplat_func(tenIn, tenFlow):
+    return req_to_taichi_process("softsplat_out", tenIn, tenFlow)[0]
+
+class costvol_func:
+    @staticmethod
+    def apply(tenOne, tenTwo):
+        return req_to_taichi_process("costvol_out", tenOne, tenTwo)[0]
+
+class sepconv_func:
+    @staticmethod
+    def apply(tenIn, tenVer, tenHor):
+        return req_to_taichi_process("sepconv_out", tenIn, tenVer, tenHor)[0]
 
 def init():
-    send_recieve_softsplat(
-        torch.ones(1, 3, 256, 256, device=model_management.get_torch_device()), 
-        torch.ones(1, 2, 256, 256, device=model_management.get_torch_device())
-    )
-
-__all__ = ['softsplat', 'FunctionSoftsplat', 'ModuleSoftsplat', 'init']
+    one_sample = torch.ones(1, 3, 16, 16, dtype=torch.float32, device=device)
+    softsplat_func(one_sample, one_sample)
+    costvol_func.apply(one_sample, one_sample)
+    sepconv_func.apply(one_sample, one_sample, one_sample)

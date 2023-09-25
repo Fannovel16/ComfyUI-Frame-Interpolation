@@ -2,8 +2,6 @@
 
 import taichi as ti
 import taichi.math as tm
-import torch
-ti.init(arch=ti.gpu)
 
 @ti.func
 def put_to_tenOut(tenOut: ti.types.ndarray(), fltIn: ti.i32, flt: ti.i32, pos:tm.uvec2, i:ti.i32, ch:ti.i32):
@@ -114,52 +112,15 @@ def softsplat_ingrad(
         add_to_fltIngrad(fltIngrad, tenOutgrad, fltSoutheast, southEast, i, ch)
         tenIngrad[i] = fltIngrad
 
-""" class RawSoftsplat(torch.nn.Module):
-    def __init__(self) -> None:
-        super(RawSoftsplat, self).__init__()
+# end
 
-    def forward(self, tenIn, tenFlow):
+def worker_interface(op_name, tensors):
+    if op_name == "softsplat_out":
+        tenIn, tenFlow = tensors
         tenOut = tenIn.new_zeros(tenIn.shape)
         softsplat_out(tenIn, tenFlow, tenOut)
-        return tenOut
+        return (tenOut, )
+    
+    raise NotImplementedError(op_name)
 
-    def backward(self, tenOutgrad):
-        tenIn, tenFlow = self.saved_tensors
-
-        tenOutgrad = tenOutgrad.contiguous()
-        assert tenOutgrad.is_cuda == True
-
-        tenIngrad = (
-            tenIn.new_zeros(tenIn.shape)
-            if self.needs_input_grad[0] == True
-            else None
-        )
-        tenFlowgrad = (
-            tenFlow.new_zeros(tenFlow.shape)
-            if self.needs_input_grad[1] == True
-            else None
-        )
-
-        if tenIngrad is not None:
-            softsplat_ingrad(tenIn, tenFlow, tenOutgrad, tenIngrad, tenFlowgrad)
-
-        if tenFlowgrad is not None:
-            softsplat_flowgrad(tenIn, tenFlow, tenOutgrad, tenIngrad, tenFlowgrad)
-
-        return tenIngrad, tenFlowgrad """
-
-def softsplat_worker(q, recieved_event, device):
-    while True:
-        tenIn, tenFlow = q.get()
-        recieved_event.set()
-        tenIn.to(device)
-        tenFlow.to(device)
-
-        tenOut = tenIn.new_zeros(tenIn.shape)
-        softsplat_out(tenIn, tenFlow, tenOut)
-
-        q.put(tenOut.cpu())
-        del tenIn
-        del tenFlow
-
-__all__ = ["softsplat_worker"]
+__all__ = ["worker_interface"]

@@ -18,7 +18,6 @@ https://github.com/ShuhongChen/eisai-anime-interpolator/blob/master/_train/frame
 """
 
 import copy
-import cupy
 import cv2
 import torch.nn.functional as F
 import torchvision.transforms.functional as F
@@ -51,7 +50,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm.auto import tqdm as std_tqdm
 from tqdm.auto import trange as std_trange
-from ..ops.softsplat import softsplat as FunctionSoftsplat
+from models.ops import FunctionSoftsplat, batch_edt
 
 autocast = torch.cuda.amp.autocast
 tqdm = partial(std_tqdm, dynamic_ncols=True)
@@ -1566,122 +1565,6 @@ def batch_dog(img, t=1.0, sigma=1.0, k=1.6, epsilon=0.01, kernel_factor=4, clip=
     return ans
 
 
-############### DISTANCE TRANSFORM ###############
-
-# img tensor: (bs,h,w) or (bs,1,h,w)
-# returns same shape
-# expects white lines, black whitespace
-# defaults to diameter if empty image
-_batch_edt_kernel = (
-    "kernel_dt",
-    """
-    extern "C" __global__ void kernel_dt(
-        const int bs,
-        const int h,
-        const int w,
-        const float diam2,
-        float* data,
-        float* output
-    ) {
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx >= bs*h*w) {
-            return;
-        }
-        int pb = idx / (h*w);
-        int pi = (idx - h*w*pb) / w;
-        int pj = (idx - h*w*pb - w*pi);
-
-        float cost;
-        float mincost = diam2;
-        for (int j = 0; j < w; j++) {
-            cost = data[h*w*pb + w*pi + j] + (pj-j)*(pj-j);
-            if (cost < mincost) {
-                mincost = cost;
-            }
-        }
-        output[idx] = mincost;
-        return;
-    }
-""",
-)
-_batch_edt = None
-
-
-def batch_edt(img, block=1024):
-    # must initialize cuda/cupy after forking
-    global _batch_edt
-    if _batch_edt is None:
-        _batch_edt = cupy_launch(*_batch_edt_kernel)
-
-    # bookkeeppingg
-    if len(img.shape) == 4:
-        assert img.shape[1] == 1
-        img = img.squeeze(1)
-        expand = True
-    else:
-        expand = False
-    bs, h, w = img.shape
-    diam2 = h**2 + w**2
-    odtype = img.dtype
-    grid = (img.nelement() + block - 1) // block
-
-    # cupy implementation
-    if img.is_cuda:
-        # first pass, y-axis
-        data = ((1 - img.type(torch.float32)) * diam2).contiguous()
-        intermed = torch.zeros_like(data)
-        _batch_edt(
-            grid=(grid, 1, 1),
-            block=(block, 1, 1),  # < 1024
-            args=[
-                cupy.int32(bs),
-                cupy.int32(h),
-                cupy.int32(w),
-                cupy.float32(diam2),
-                data.data_ptr(),
-                intermed.data_ptr(),
-            ],
-        )
-
-        # second pass, x-axis
-        intermed = intermed.permute(0, 2, 1).contiguous()
-        out = torch.zeros_like(intermed)
-        _batch_edt(
-            grid=(grid, 1, 1),
-            block=(block, 1, 1),
-            args=[
-                cupy.int32(bs),
-                cupy.int32(w),
-                cupy.int32(h),
-                cupy.float32(diam2),
-                intermed.data_ptr(),
-                out.data_ptr(),
-            ],
-        )
-        ans = out.permute(0, 2, 1).sqrt()
-        ans = ans.type(odtype) if odtype != ans.dtype else ans
-
-    # default to scipy cpu implementation
-    else:
-        sums = img.sum(dim=(1, 2))
-        ans = torch.tensor(
-            np.stack(
-                [
-                    scipy.ndimage.morphology.distance_transform_edt(i)
-                    if s != 0
-                    else np.ones_like(i)  # change scipy behavior for empty image
-                    * np.sqrt(diam2)
-                    for i, s in zip(1 - img, sums)
-                ]
-            ),
-            dtype=odtype,
-        )
-
-    if expand:
-        ans = ans.unsqueeze(1)
-    return ans
-
-
 ############### DERIVED DISTANCES ###############
 
 # input: (bs,h,w) or (bs,1,h,w)
@@ -1740,14 +1623,6 @@ def batch_hausdorff_distance(gt, pred, block=1024, return_more=False):
 
 
 #################### UTILITIES ####################
-
-try:
-    # @cupy.memoize(for_each_device=True)
-    def cupy_launch(func, kernel):
-        return cupy.cuda.compile_with_cache(kernel).get_function(func)
-
-except:
-    cupy_launch = lambda func, kernel: None
 
 
 def reset_parameters(model):

@@ -25,7 +25,7 @@ import torch.nn.functional as F
 import torch
 import math
 from models.rife.rife_arch import IFNet
-from ..ops.softsplat import softsplat
+from models.ops import softsplat
 
 device = torch.device("cuda")
 

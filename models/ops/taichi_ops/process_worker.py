@@ -1,0 +1,27 @@
+import torch.multiprocessing as mp
+import torch
+from .raw_softsplat import worker_interface as raw_softsplat
+from .costvol import worker_interface as costvol
+from .sepconv import worker_interface as sepconv
+from .utils import to_shared_memory, to_device
+import taichi as ti
+import traceback
+
+def f(queue: mp.Queue, recieved_event: mp.Event, device: torch.DeviceObjType):
+    ti.init(arch=ti.gpu)
+    while True:
+        op_name, tensors = queue.get()
+        tensors = to_device(tensors, device)
+        recieved_event.set()
+        try:
+            if "softsplat" in op_name:
+                result = raw_softsplat(op_name, tensors)
+            elif "costvol" in op_name:
+                result = costvol(op_name, tensors)
+            elif "sepconv" in op_name:
+                result = sepconv(op_name, tensors)
+            else:
+                raise NotImplementedError(op_name)
+            queue.put(to_shared_memory(result))
+        except:
+            queue.put(traceback.format_exc())

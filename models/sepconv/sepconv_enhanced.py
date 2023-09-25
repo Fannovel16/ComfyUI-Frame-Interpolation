@@ -9,7 +9,7 @@ import torch
 import typing
 
 ##########################################################
-from ..ops.sepconv import sepconv_func
+from models.ops import sepconv_func
 ##########################################################
 
 
