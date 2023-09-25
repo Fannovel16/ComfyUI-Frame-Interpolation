@@ -14,6 +14,9 @@ from models.rife import RIFE_VFI
 from models.sepconv import SepconvVFI
 from models.amt import AMT_VFI
 from utils import MakeInterpolationStateList
+import models.ops as ops
+
+ops.init()
     
 NODE_CLASS_MAPPINGS = {
     "KSampler Gradually Adding More Denoise (efficient)": Gradually_More_Denoise_KSampler,
