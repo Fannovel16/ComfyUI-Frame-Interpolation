@@ -2,7 +2,7 @@ from .rife_arch import IFNet
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
@@ -46,7 +46,7 @@ class RIFE_VFI:
         multiplier: typing.SupportsInt = 2,
         fast_mode = False,
         ensemble = False,
-        optional_interpolation_states: typing.Optional[list[bool]] = None    
+        optional_interpolation_states: InterpolationStateList = None    
     ):
         """
         Perform video frame interpolation using a given checkpoint model.

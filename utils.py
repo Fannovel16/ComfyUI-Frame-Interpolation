@@ -19,6 +19,42 @@ if os.path.exists(config_path):
 else:
     raise Exception("config.yaml file is neccessary, plz recreate the config file by downloading it from https://github.com/Fannovel16/ComfyUI-Frame-Interpolation")
 
+
+class InterpolationStateList():
+
+    def __init__(self, frame_indices: typing.List[int], is_skip_list: bool):
+        self.frame_indices = frame_indices
+        self.is_skip_list = is_skip_list
+        
+    def is_frame_skipped(self, frame_index):
+        is_frame_in_list = frame_index in self.frame_indices
+        return self.is_skip_list and is_frame_in_list or not self.is_skip_list and not is_frame_in_list
+    
+
+class MakeInterpolationStateList:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "frame_indices": ("STRING", {"multiline": True, "default": "1,2,3"}),
+                "is_skip_list": ("BOOLEAN", {"default": True},),
+            },
+        }
+    
+    RETURN_TYPES = ("INTERPOLATION_STATES",)
+    FUNCTION = "create_options"
+    CATEGORY = "ComfyUI-Frame-Interpolation/VFI"    
+
+    def create_options(self, frame_indices: str, is_skip_list: bool):
+        frame_indices_list = [int(item) for item in frame_indices.split(',')]
+        
+        interpolation_state_list = InterpolationStateList(
+            frame_indices=frame_indices_list,
+            is_skip_list=is_skip_list,
+        )
+        return (interpolation_state_list,)
+        
+        
 def get_ckpt_container_path(model_type):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), config["ckpts_path"], model_type))
 
@@ -100,7 +136,7 @@ def generic_frame_loop(
         multiplier: typing.SupportsInt,
         return_middle_frame_function,
         *return_middle_frame_function_args,
-        interpolation_states: typing.Optional[list[bool]] = None):
+        interpolation_states: InterpolationStateList = None):
     
     output_frames = []  # List to store processed frames in the correct order
 
@@ -111,7 +147,7 @@ def generic_frame_loop(
         frame_0 = frames[frame_itr]
         output_frames.append(frame_0) # Start with first frame
         
-        if interpolation_states is None or interpolation_states[frame_itr]:
+        if interpolation_states is None or not interpolation_states.is_frame_skipped(frame_itr):
             
             # Generate and append a batch of middle frames
             middle_frames_batch = []

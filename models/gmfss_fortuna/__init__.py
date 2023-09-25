@@ -1,5 +1,5 @@
 import pathlib
-from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
 import torch
 import torch.nn as nn
@@ -101,7 +101,7 @@ class GMFSS_Fortuna_VFI:
         frames: torch.Tensor,
         clear_cache_after_n_frames = 10,
         multiplier: typing.SupportsInt = 2,
-        optional_interpolation_states: typing.Optional[list[bool]] = None   
+        optional_interpolation_states: InterpolationStateList = None   
     ):
         """
         Perform video frame interpolation using a given checkpoint model.
