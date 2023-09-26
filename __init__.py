@@ -30,3 +30,4 @@ NODE_CLASS_MAPPINGS = {
     "AMT VFI": AMT_VFI,
     "Make Interpolation State List": MakeInterpolationStateList,
 }
+

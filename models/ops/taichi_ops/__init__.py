@@ -1,7 +1,7 @@
 import comfy.model_management as model_management
 import torch
 import torch.multiprocessing as mp
-from .process_worker import f
+from .worker_process import f
 from .utils import to_shared_memory
 
 parent_conn, child_conn, process = None, None, None
