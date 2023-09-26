@@ -7,4 +7,3 @@ scipy
 Pillow
 torchvision
 tqdm
-cupy-wheel

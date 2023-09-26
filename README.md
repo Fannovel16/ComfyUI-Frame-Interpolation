@@ -1,6 +1,3 @@
-# ComfyUI Frame Interpolation (ComfyUI VFI)
+# ComfyUI Frame Interpolation (ComfyUI VFI) (WIP)
 
-(WIP)
-
-IF YOU INSTALLED THIS REPO BEFORE `25th Monday September 2023, 14:02:00 UTC`, PLEASE REINSTALL AS IT NOW USES `taichi-lang` AS DEFAULT OPS BACKEND INSTEAD OF `cupy`.
-CHANGE `ops_backend` FROM `taichi` TO `cupy` IF YOU STILL WANT TO USE IT.
+The default ops backend is reverted to cupy. Change `ops_backend` to `taichi` and install `taichi-lang` manually if you want to use taichi backend. 
