@@ -216,7 +216,8 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict):
 @cupy.memoize(for_each_device=True)
 def cuda_launch(strKey: str):
     if "CUDA_HOME" not in os.environ:
-        torch_lib_path = Path(sys.executable).parent / "Lib/site-packages/torch/lib"
+        import torch
+        torch_lib_path = Path(torch.__file__).parent / "lib"
         torch_lib_path = str(torch_lib_path.resolve())
         if os.path.exists(torch_lib_path):
             os.environ["CUDA_HOME"] = torch_lib_path
