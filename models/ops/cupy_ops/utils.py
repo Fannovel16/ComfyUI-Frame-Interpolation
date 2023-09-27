@@ -3,6 +3,7 @@ import os
 import re
 import torch
 import typing
+from pathlib import Path
 
 ##########################################################
 
@@ -214,8 +215,14 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict):
 @cupy.memoize(for_each_device=True)
 def cuda_launch(strKey: str):
     if "CUDA_HOME" not in os.environ:
-        os.environ["CUDA_HOME"] = "/usr/local/cuda/"
-    # end
+        #__file__ -> cupy_ops -> ops -> models -> ComfyUI-Frame-Interpolation -> custom_nodes -> ComfyUI -> ComfyUI_windows_portable
+        #ComfyUI_windows_portable -> python_embeded\Lib\site-packages\torch\lib
+        cuda_lib_path = Path(__file__).parent.parent.parent.parent.parent.parent.parent / "python_embeded/Lib/site-packages/torch/lib"
+        cuda_lib_path = str(cuda_lib_path.resolve())
+        if os.path.exists(cuda_lib_path):
+            os.environ["CUDA_HOME"] = cuda_lib_path
+        else:
+            os.environ["CUDA_HOME"] = "/usr/local/cuda/"
 
     # print(objCudacache[strKey]['strKernel'])
     # return cupy.cuda.compile_with_cache(objCudacache[strKey]['strKernel'], tuple(['-I ' + os.environ['CUDA_HOME'], '-I ' + os.environ['CUDA_HOME'] + '/include'])).get_function(objCudacache[strKey]['strFunction'])

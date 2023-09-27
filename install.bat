@@ -1,5 +1,6 @@
 @echo off
 
+set "requirements_portable_txt=%~dp0\requirements-for-portable.txt"
 set "requirements_txt=%~dp0\requirements.txt"
 set "python_exec=..\..\..\python_embeded\python.exe"
 
@@ -7,7 +8,7 @@ echo Installing ComfyUI Frame Interpolation..
 
 if exist "%python_exec%" (
     echo Installing with ComfyUI Portable
-    for /f "delims=" %%i in (%requirements_txt%) do (
+    for /f "delims=" %%i in (%requirements_portable_txt%) do (
         %python_exec% -s -m pip install "%%i"
     )
 ) else (

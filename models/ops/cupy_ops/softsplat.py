@@ -345,7 +345,7 @@ def FunctionSoftsplat(tenInput, tenFlow, tenMetric, strType):
 
     # end
 
-    tenOutput = softsplat_func(tenInput, tenFlow)
+    tenOutput = softsplat_func.apply(tenInput, tenFlow)
 
     if strType != "summation":
         tenNormalize = tenOutput[:, -1:, :, :]
@@ -410,7 +410,7 @@ def softsplat(
 
     # end
 
-    tenOut = softsplat_func(tenIn, tenFlow)
+    tenOut = softsplat_func.apply(tenIn, tenFlow)
 
     if strMode.split("-")[0] in ["avg", "linear", "soft"]:
         tenNormalize = tenOut[:, -1:, :, :]
