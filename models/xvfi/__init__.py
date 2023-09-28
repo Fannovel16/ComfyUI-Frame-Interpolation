@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 import pathlib
 from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 CKPT_CONFIGS = {
     "XVFInet_X4K1000FPS_exp1_latest.pt": {
@@ -27,13 +28,13 @@ class XVFI_Inference(nn.Module):
         super(XVFI_Inference, self).__init__()
         model_config = model_config
         args = argparse.Namespace(
-            gpu=torch.cuda.current_device(),
+            gpu=get_torch_device(),
             nf=64,
             **model_config,
             img_ch=3,
         )
-        self.model = XVFInet(args).apply(weights_init).cuda()
-        self.model.load_state_dict(torch.load(model_path, map_location=f"cuda:{torch.cuda.current_device()}")["state_dict_Model"])
+        self.model = XVFInet(args).apply(weights_init).to(get_torch_device())
+        self.model.load_state_dict(torch.load(model_path, map_location=get_torch_device())["state_dict_Model"])
 
     def forward(self, I0, I1, timestep):
         #"Real" inference is called "test_custom" in the original repo
@@ -78,7 +79,7 @@ class XVFI:
         global model
         model = XVFI_Inference(model_path, ckpt_config)
 
-        frames = preprocess_frames(frames, "cuda")
+        frames = preprocess_frames(frames, get_torch_device())
         #https://github.com/JihyongOh/XVFI/blob/main/main.py#L314
         divide = 2 ** (ckpt_config["S_tst"]) * ckpt_config["module_scale_factor"] * 4
         B, C, H, W = frames.size()
@@ -104,7 +105,7 @@ class XVFI:
                 _middle_frames = model(
                     frames[former_idxs_batch], 
                     frames[former_idxs_batch + 1], 
-                    timestep=torch.tensor([middle_i/multipler]).repeat(len(former_idxs_batch)).unsqueeze(1).cuda()
+                    timestep=torch.tensor([middle_i/multipler]).repeat(len(former_idxs_batch)).unsqueeze(1).to(get_torch_device())
                 )
                 for i, former_idx in enumerate(former_idxs_batch):
                     frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)

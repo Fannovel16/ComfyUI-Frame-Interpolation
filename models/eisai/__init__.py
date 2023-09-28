@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from .eisai_arch import SoftsplatLite, DTM, RAFT
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
 MODEL_FILE_NAMES = {
@@ -18,15 +19,15 @@ class EISAI(nn.Module):
     def __init__(self, model_file_names) -> None:
         super(EISAI, self).__init__()
         self.raft = RAFT(load_file_from_github_release(MODEL_TYPE, model_file_names["raft"]))
-        self.raft.cuda().eval()
+        self.raft.to(get_torch_device()).eval()
 
         self.ssl = SoftsplatLite()
         self.ssl.load_state_dict(torch.load(load_file_from_github_release(MODEL_TYPE, model_file_names["ssl"])))
-        self.ssl.cuda().eval()
+        self.ssl.to(get_torch_device()).eval()
 
         self.dtm = DTM()
         self.dtm.load_state_dict(torch.load(load_file_from_github_release(MODEL_TYPE, model_file_names["dtm"])))
-        self.dtm.cuda().eval()
+        self.dtm.to(get_torch_device()).eval()
     
     def forward(self, img0, img1, t):
         with torch.no_grad():
@@ -67,7 +68,7 @@ class EISAI_VFI:
     @classmethod
     def create_model(self, ckpt_name):
         model = EISAI(MODEL_FILE_NAMES)
-        model.eval().cuda()
+        model.eval().to(get_torch_device())
         return model
 
     RETURN_TYPES = ("IMAGE", )
@@ -82,7 +83,7 @@ class EISAI_VFI:
         multipler: typing.SupportsInt = 2,
         optional_interpolation_states: typing.Optional[typing.List[bool]] = None
     ):
-        orig_frames = preprocess_frames(orig_frames, "cuda")
+        orig_frames = preprocess_frames(orig_frames, get_torch_device())
         orig_frames = F.interpolate(orig_frames, size=(540, 960)) #EISAI forces the input to be 960x540 lol
         frames_2d = [
             [orig_frame.unsqueeze(0)] for orig_frame in orig_frames

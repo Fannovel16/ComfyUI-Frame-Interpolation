@@ -11,9 +11,9 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 import torch.optim as optim
+from comfy.model_management import soft_empty_cache, get_torch_device
 
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = get_torch_device()
 backwarp_tenGrid = {}
 
 
@@ -53,7 +53,7 @@ def warp(tenInput, tenFlow):
 
     g = (backwarp_tenGrid[k] + tenFlow).permute(0, 2, 3, 1)
 
-    if tenInput.type() == "torch.cuda.HalfTensor":
+    if "HalfTensor" in str(tenInput.type()):
         g = g.half()
 
     return torch.nn.functional.grid_sample(

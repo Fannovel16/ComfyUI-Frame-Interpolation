@@ -2,9 +2,10 @@ import pathlib
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_direct_url, preprocess_frames, postprocess_frames
+from utils import load_file_from_direct_url, preprocess_frames, postprocess_frames, generic_frame_loop
 import typing
 from .amt_arch import AMT_S, AMT_L, AMT_G, InputPadder
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 #https://github.com/MCG-NKU/AMT/tree/main/cfgs
 CKPT_CONFIGS = {
@@ -37,9 +38,8 @@ class AMT_VFI:
             "required": {
                 "ckpt_name": (list(CKPT_CONFIGS.keys()), ),
                 "frames": ("IMAGE", ),
-                "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
-                "multipler": ("INT", {"default": 2, "min": 1}),
-                "scale_factor": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 100, "step": 0.1}),
+                "clear_cache_after_n_frames": ("INT", {"default": 1, "min": 1, "max": 100}),
+                "multiplier": ("INT", {"default": 2, "min": 2, "max": 1000})
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
@@ -54,46 +54,33 @@ class AMT_VFI:
         self,
         ckpt_name: typing.AnyStr, 
         frames: torch.Tensor, 
-        batch_size: typing.SupportsInt = 1,
-        multipler: typing.SupportsInt = 2,
-        scale_factor: typing.SupportsFloat = 1.0,
+        clear_cache_after_n_frames: typing.SupportsInt = 1,
+        multiplier: typing.SupportsInt = 2,
         optional_interpolation_states: typing.Optional[list[bool]] = None
     ):
         model_path = load_file_from_direct_url(MODEL_TYPE, f"https://huggingface.co/lalala125/AMT/resolve/main/{ckpt_name}")
         ckpt_config = CKPT_CONFIGS[ckpt_name]
 
-        global model
-        model = ckpt_config["network"](**ckpt_config["params"])
-        model.load_state_dict(torch.load(model_path)["state_dict"])
-        model.eval().cuda()
+        interpolation_model = ckpt_config["network"](**ckpt_config["params"])
+        interpolation_model.load_state_dict(torch.load(model_path)["state_dict"])
+        interpolation_model.eval().to(get_torch_device())
 
-        frames = preprocess_frames(frames, "cuda")
+        frames = preprocess_frames(frames, get_torch_device())
         padder = InputPadder(frames[0].shape, 16)
-        frames = torch.cat(padder.pad(*[frame.unsqueeze(0) for frame in frames]), dim=0)
+        frames = padder.pad(*[frame.unsqueeze(0) for frame in frames])
         
-        frame_dict = {
-            str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])
-        }
-
-        if optional_interpolation_states is None:
-            interpolation_states = [True] * (frames.shape[0] - 1)
-        else:
-            interpolation_states = optional_interpolation_states
-
-        enabled_former_idxs = [i for i, state in enumerate(interpolation_states) if state]
-        former_idxs_loader = DataLoader(enabled_former_idxs, batch_size=batch_size)
+        def return_middle_frame(frame_0, frame_1, timestep, model):
+            return model(
+                frame_0, 
+                frame_1, 
+                timestep, 
+                embt=torch.FloatTensor([timestep] * frame_0.shape[0]).view(frame_0.shape[0], 1, 1, 1).to(get_torch_device())
+            )
         
-        for former_idxs_batch in former_idxs_loader:
-            for middle_i in range(1, multipler):
-                shape = frames[former_idxs_batch].shape
-                _middle_frames = model(
-                    frames[former_idxs_batch], 
-                    frames[former_idxs_batch + 1], 
-                    embt=torch.FloatTensor([middle_i / multipler] * shape[0]).view(shape[0], 1, 1, 1).cuda(),
-                    scale_factor=scale_factor,
-                    eval=True
-                )["imgt_pred"]
-                for i, former_idx in enumerate(former_idxs_batch):
-                    frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
-        out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
-        return (postprocess_frames(out_frames), )
+        args = [interpolation_model]
+        out = postprocess_frames(
+            generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
+                               interpolation_states=optional_interpolation_states)
+        )
+        return (out,)
+

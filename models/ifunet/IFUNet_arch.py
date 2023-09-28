@@ -9,19 +9,10 @@ https://github.com/98mxr/IFUNet/blob/main/model/ResynNet.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from comfy.model_management import soft_empty_cache, get_torch_device
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
 backwarp_tenGrid = {}
-
-import torch
-from torch import nn as nn
-from torch.nn import functional as F
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = get_torch_device()
 
 
 def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1):

@@ -7,7 +7,7 @@ import typing
 import traceback
 import einops
 import torchvision.transforms.functional as transform
-import numpy as np
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 BASE_MODEL_DOWNLOAD_URLS = [
     "https://github.com/styler00dollar/VSGAN-tensorrt-docker/releases/download/models/",
@@ -169,12 +169,12 @@ def generic_frame_loop(
     
             # Try to avoid a memory overflow by clearing cuda cache regularly
             if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
-                torch.cuda.empty_cache()
+                soft_empty_cache()
                 number_of_frames_processed_since_last_cleared_cuda_cache = 0
                 
     output_frames.append(frames[-1]) # Append final frame
     out = torch.cat(output_frames, dim=0)
     # clear cache for courtesy
-    torch.cuda.empty_cache()
+    soft_empty_cache()
     return out
     

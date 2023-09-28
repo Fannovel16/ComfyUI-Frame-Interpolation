@@ -4,9 +4,9 @@ import typing
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
 from .GMFSS_Fortuna_arch import Model as GMFSS
 from .GMFSS_Fortuna_union_arch import Model as GMFSS_Union
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 
 GLOBAL_MODEL_TYPE = pathlib.Path(__file__).parent.name
@@ -126,9 +126,9 @@ class GMFSS_Fortuna_VFI:
         """
         
         interpolation_model = CommonModelInference(model_type=ckpt_name)
-        interpolation_model.eval().cuda()
+        interpolation_model.eval().to()
         
-        frames = preprocess_frames(frames, "cuda")
+        frames = preprocess_frames(frames, get_torch_device())
             
         # Ensure proper tensor dimensions
         frames = [frame.unsqueeze(0) for frame in frames]

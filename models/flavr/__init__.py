@@ -7,6 +7,7 @@ import pathlib
 import typing
 from .flavr_arch import UNet_3D_3D
 from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 NBR_FRAME = 4
 
@@ -19,7 +20,7 @@ class FLAVR_Inference(nn.Module):
         #Ref: Class UNet_3D_3D
         self.model = UNet_3D_3D("unet_18", n_inputs=NBR_FRAME, n_outputs=sd["outconv.1.weight"].shape[0] // 3, joinType="concat" , upmode="transpose")
         self.model.load_state_dict(sd)
-        self.model.cuda().eval()
+        self.model.to(get_torch_device()).eval()
         del sd
     
     def forward(self, frame_tensor):
@@ -75,7 +76,7 @@ class FLAVR_VFI:
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         global model
         model = FLAVR_Inference(model_path)
-        frames = preprocess_frames(frames, "cuda")
+        frames = preprocess_frames(frames, get_torch_device())
 
         if optional_interpolation_states is None:
             interpolation_states = [True] * (frames.shape[0] - 1)

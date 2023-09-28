@@ -7,6 +7,7 @@ Deleted stuffs about arguments_strModel and getopt
 #!/usr/bin/env python
 import torch
 import typing
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 ##########################################################
 from models.ops import sepconv_func
@@ -710,7 +711,7 @@ def estimate(tenOne, tenTwo):
     global netNetwork
 
     if netNetwork is None:
-        netNetwork = Network().cuda().eval()
+        netNetwork = Network().to(get_torch_device()).eval()
     # end
 
     assert tenOne.shape[1] == tenTwo.shape[1]
@@ -726,8 +727,8 @@ def estimate(tenOne, tenTwo):
         intHeight <= 720
     )  # while our approach works with larger images, we do not recommend it unless you are aware of the implications
 
-    tenPreprocessedOne = tenOne.cuda().view(1, 3, intHeight, intWidth)
-    tenPreprocessedTwo = tenTwo.cuda().view(1, 3, intHeight, intWidth)
+    tenPreprocessedOne = tenOne.to(get_torch_device()).view(1, 3, intHeight, intWidth)
+    tenPreprocessedTwo = tenTwo.to(get_torch_device()).view(1, 3, intHeight, intWidth)
 
     intPadr = (2 - (intWidth % 2)) % 2
     intPadb = (2 - (intHeight % 2)) % 2

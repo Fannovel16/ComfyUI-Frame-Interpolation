@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 import pathlib
 from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
 CKPT_NAME_VER_DICT = {
@@ -28,6 +29,7 @@ class RIFE_VFI:
                 "multiplier": ("INT", {"default": 2, "min": 1}),
                 "fast_mode": ("BOOLEAN", {"default":True}),
                 "ensemble": ("BOOLEAN", {"default":True}),
+                "scale_factor": ([0.25, 0.5, 1.0, 2.0, 4.0], {"default": 1.0})
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
@@ -46,6 +48,7 @@ class RIFE_VFI:
         multiplier: typing.SupportsInt = 2,
         fast_mode = False,
         ensemble = False,
+        scale_factor = 1.0,
         optional_interpolation_states: InterpolationStateList = None    
     ):
         """
@@ -73,9 +76,9 @@ class RIFE_VFI:
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         interpolation_model = IFNet(arch_ver=CKPT_NAME_VER_DICT[ckpt_name])
         interpolation_model.load_state_dict(torch.load(model_path))
-        interpolation_model.eval().cuda()
+        interpolation_model.eval().to(get_torch_device())
         
-        frames = preprocess_frames(frames, "cuda")
+        frames = preprocess_frames(frames, get_torch_device())
             
         # Ensure proper tensor dimensions
         frames = [frame.unsqueeze(0) for frame in frames]
@@ -83,8 +86,6 @@ class RIFE_VFI:
         def return_middle_frame(frame_0, frame_1, timestep, model, scale_list, in_fast_mode, in_ensemble):
             return model(frame_0, frame_1, timestep, scale_list, in_fast_mode, in_ensemble)
         
-        scale_factor = 1
-        # Intentionally leaving this in, as scale_factor could become a parameter
         scale_list = [8 / scale_factor, 4 / scale_factor, 2 / scale_factor, 1 / scale_factor] 
         
         args = [interpolation_model, scale_list, fast_mode, ensemble]

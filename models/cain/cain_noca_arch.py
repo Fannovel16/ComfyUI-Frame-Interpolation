@@ -5,11 +5,12 @@ import torch
 import torch.nn as nn
 
 from .common import *
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 class Encoder(nn.Module):
     def __init__(self, in_channels=3, depth=3):
         super(Encoder, self).__init__()
-        self.device = torch.device('cuda')
+        self.device = get_torch_device()
         
         self.shuffler = PixelShuffle(1/2**depth)
         # self.shuffler = nn.Sequential(
@@ -30,7 +31,7 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, depth=3):
         super(Decoder, self).__init__()
-        self.device = torch.device('cuda')
+        self.device = get_torch_device()
 
         self.shuffler = PixelShuffle(2**depth)
         # self.shuffler = nn.Sequential(

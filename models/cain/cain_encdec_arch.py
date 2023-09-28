@@ -5,12 +5,12 @@ import torch
 import torch.nn as nn
 
 from .common import *
-
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 class Encoder(nn.Module):
     def __init__(self, in_channels=3, depth=3, nf_start=32, norm=False):
         super(Encoder, self).__init__()
-        self.device = torch.device('cuda')
+        self.device = get_torch_device()
         
         nf = nf_start
         relu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
@@ -42,7 +42,7 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, in_channels=192, out_channels=3, depth=3, norm=False, up_mode='shuffle'):
         super(Decoder, self).__init__()
-        self.device = torch.device('cuda')
+        self.device = get_torch_device()
 
         relu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
 

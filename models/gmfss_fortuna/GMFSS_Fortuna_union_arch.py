@@ -26,11 +26,9 @@ import torch
 import math
 from models.rife.rife_arch import IFNet
 from models.ops import softsplat
+from comfy.model_management import soft_empty_cache, get_torch_device
 
-device = torch.device("cuda")
-
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = get_torch_device()
 backwarp_tenGrid = {}
 
 
@@ -331,7 +329,7 @@ def generate_shift_window_attn_mask(
     window_size_w,
     shift_size_h,
     shift_size_w,
-    device=torch.device("cuda"),
+    device=get_torch_device(),
 ):
     # Ref: https://github.com/microsoft/Swin-Transformer/blob/main/models/swin_transformer.py
     # calculate attention mask for SW-MSA
@@ -1399,7 +1397,7 @@ def backwarp(tenIn, tenflow):
             .repeat(1, 1, 1, tenflow.shape[3])
         )
 
-        backwarp_tenGrid[str(tenflow.shape)] = torch.cat([tenHor, tenVer], 1).cuda()
+        backwarp_tenGrid[str(tenflow.shape)] = torch.cat([tenHor, tenVer], 1).to(get_torch_device())
     # end
 
     tenflow = torch.cat(

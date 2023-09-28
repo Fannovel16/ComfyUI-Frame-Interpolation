@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 
 def warp(img, flow):
@@ -235,8 +236,8 @@ class IRFNet_S(nn.Module):
         img1 = F.pad(img1, padding)
 
         #Support multiple batches
-        embt = torch.tensor([timestep] * n).view(n, 1, 1, 1).float().cuda()
-        if img0.type() == "torch.cuda.HalfTensor":
+        embt = torch.tensor([timestep] * n).view(n, 1, 1, 1).float().to(get_torch_device())
+        if "HalfTensor" in str(img0.type()):
             embt = embt.half()
 
         mean_ = (

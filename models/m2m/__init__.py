@@ -5,6 +5,8 @@ import pathlib
 from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
 from .M2M_arch import M2M_PWC
+from comfy.model_management import soft_empty_cache, get_torch_device
+from utils import InterpolationStateList, generic_frame_loop
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
 CKPT_NAMES = ["M2M.pth"]
@@ -17,8 +19,8 @@ class M2M_VFI:
             "required": {
                 "ckpt_name": (CKPT_NAMES, ),
                 "frames": ("IMAGE", ),
-                "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
-                "multipler": ("INT", {"default": 2, "min": 1}),
+                "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
+                "multiplier": ("INT", {"default": 2, "min": 2, "max": 1000}),
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
@@ -33,43 +35,28 @@ class M2M_VFI:
         self,
         ckpt_name: typing.AnyStr, 
         frames: torch.Tensor, 
-        batch_size: typing.SupportsInt = 1,
-        multipler: typing.SupportsInt = 2,
-        optional_interpolation_states: typing.Optional[list[bool]] = None
+        clear_cache_after_n_frames: typing.SupportsInt = 1,
+        multiplier: typing.SupportsInt = 2,
+        optional_interpolation_states: InterpolationStateList = None
     ):
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
-        global model
-        model = M2M_PWC()
-        model.load_state_dict(torch.load(model_path))
-        model.eval().cuda()
+        interpolation_model = M2M_PWC()
+        interpolation_model.load_state_dict(torch.load(model_path))
+        interpolation_model.eval().to(get_torch_device())
 
-        frames = preprocess_frames(frames, "cuda")
+        frames = preprocess_frames(frames, get_torch_device())
+        # Ensure proper tensor dimensions
+        frames = [frame.unsqueeze(0) for frame in frames]
         
-        frame_dict = {
-            str(i): frames[i].unsqueeze(0) for i in range(frames.shape[0])
-        }
-
-        if optional_interpolation_states is None:
-            interpolation_states = [True] * (frames.shape[0] - 1)
-        else:
-            interpolation_states = optional_interpolation_states
-
-        enabled_former_idxs = [i for i, state in enumerate(interpolation_states) if state]
-        former_idxs_loader = DataLoader(enabled_former_idxs, batch_size=batch_size)
+        def return_middle_frame(frame_0, frame_1, int_timestep, model):
+            tenSteps = [
+                torch.FloatTensor([int_timestep] * len(frame_0)).view(len(frame_0), 1, 1, 1).to(get_torch_device())
+            ]
+            return model(frame_0, frame_1, tenSteps)[0]
         
-        for former_idxs_batch in former_idxs_loader:
-            for middle_i in range(1, multipler):
-                tenSteps = [
-                    torch.FloatTensor([st / (multipler) * 1] * len(former_idxs_batch)).view(len(former_idxs_batch), 1, 1, 1).cuda()
-                    for st in range(1, multipler)
-                ]
-                _middle_frames = model(
-                    frames[former_idxs_batch], 
-                    frames[former_idxs_batch + 1], 
-                    tenSteps,
-                    multipler
-                )[0]
-                for i, former_idx in enumerate(former_idxs_batch):
-                    frame_dict[f'{former_idx}.{middle_i}'] = _middle_frames[i].unsqueeze(0)
-        out_frames = torch.cat([frame_dict[key] for key in sorted(frame_dict.keys())], dim=0)
-        return (postprocess_frames(out_frames), )
+        args = [interpolation_model]
+        out = postprocess_frames(
+            generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
+                               interpolation_states=optional_interpolation_states)
+        )
+        return (out,)

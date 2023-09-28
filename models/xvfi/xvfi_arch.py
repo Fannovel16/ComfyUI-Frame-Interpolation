@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
 from torch.nn import init
+from comfy.model_management import soft_empty_cache, get_torch_device
 
 
 
@@ -13,7 +14,7 @@ class XVFInet(nn.Module):
 	def __init__(self, args):
 		super(XVFInet, self).__init__()
 		self.args = args
-		self.device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')  # will be used as "x.to(device)"
+		self.device = get_torch_device()
 		self.nf = args.nf
 		self.scale = args.module_scale_factor
 		self.vfinet = VFInet(args)
@@ -82,7 +83,7 @@ class VFInet(nn.Module):
 	def __init__(self, args):
 		super(VFInet, self).__init__()
 		self.args = args
-		self.device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')  # will be used as "x.to(device)"
+		self.device = get_torch_device()
 		self.nf = args.nf
 		self.scale = args.module_scale_factor
 		self.in_channels = 3
@@ -247,8 +248,7 @@ class VFInet(nn.Module):
 		yy = torch.arange(0, H).view(1, 1, H, 1).expand(B, 1, H, W)
 		grid = torch.cat((xx, yy), 1).float()
 
-		if x.is_cuda:
-			grid = grid.to(self.device)
+		grid = grid.to(self.device)
 		vgrid = torch.autograd.Variable(grid) + flo
 
 		# scale grid to [-1,1]
