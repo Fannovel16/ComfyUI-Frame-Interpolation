@@ -2,7 +2,6 @@ import latent_preview
 import comfy
 import einops
 import torch
-from utils import postprocess_frames
 
 def common_ksampler(model, seed, steps, cfg, sampler_name, scheduler, positive, negative, latent, denoise=1.0, disable_noise=False, start_step=None, last_step=None, force_full_denoise=False):
     device = comfy.model_management.get_torch_device()
@@ -36,7 +35,7 @@ def common_ksampler(model, seed, steps, cfg, sampler_name, scheduler, positive, 
                                   force_full_denoise=force_full_denoise, noise_mask=noise_mask, callback=callback, seed=seed)
     out = latent.copy()
     out["samples"] = samples
-    return (postprocess_frames(out_frames), )
+    return (out, )
 
 class Gradually_More_Denoise_KSampler:
     @classmethod
