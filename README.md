@@ -2,6 +2,16 @@
 
 A custom node set for Video Frame Interpolation in ComfyUI.
 
+## Nodes
+* KSampler Gradually Adding More Denoise (efficient)
+* GMFSS Fortuna VFI
+* IFRNet_VFI
+* IFUnet VFI
+* M2M VFI
+* RIFE VFI
+* FILM VFI
+* Make Interpolation State List
+
 ## Install
 ### ComfyUI Manager
 https://github.com/ltdrdata/ComfyUI-Manager#how-to-use
@@ -24,8 +34,6 @@ Then change value of `ops_backend` from `cupy` to `taichi` in `config.yaml`
 All VFI nodes are placed in `ComfyUI-Frame-Interpolation/VFI` and require a `IMAGE` containing frames (at least two).
 
 It is recommended to use LoadImages (LoadImagesFromDirectory) from [ComfyUI-Advanced-ControlNet](https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet/) and [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite) along side with this extension.
-
-Currently, only `GMFSS Fortuna` and `RIFE` are tested carefully.
 
 ## Example
 ### Simple workflow

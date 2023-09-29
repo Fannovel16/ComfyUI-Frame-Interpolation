@@ -11,8 +11,10 @@ from comfy.model_management import soft_empty_cache, get_torch_device
 
 BASE_MODEL_DOWNLOAD_URLS = [
     "https://github.com/styler00dollar/VSGAN-tensorrt-docker/releases/download/models/",
-    "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/releases/download/models/"
+    "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/releases/download/models/",
+    "https://github.com/dajes/frame-interpolation-pytorch/releases/download/v1.0.0/"
 ]
+
 config_path = os.path.join(os.path.dirname(__file__), "./config.yaml")
 if os.path.exists(config_path):
     config = yaml.load(open(config_path, "r"), Loader=yaml.FullLoader)
@@ -147,34 +149,34 @@ def generic_frame_loop(
         frame_0 = frames[frame_itr]
         output_frames.append(frame_0) # Start with first frame
         
-        if interpolation_states is None or not interpolation_states.is_frame_skipped(frame_itr):
+        if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
+            continue
+    
+        # Generate and append a batch of middle frames
+        middle_frames_batch = []
+
+        # Generate and append a middle frame per multiplier - 1
+        for middle_i in range(1, multiplier):
+            timestep = middle_i/multiplier
             
-            # Generate and append a batch of middle frames
-            middle_frames_batch = []
-    
-            # Generate and append a middle frame per multiplier - 1
-            for middle_i in range(1, multiplier):
-                timestep = middle_i/multiplier
-                
-                middle_frame = return_middle_frame_function(
-                    frame_0, 
-                    frames[frame_itr + 1],
-                    timestep,
-                    *return_middle_frame_function_args
-                )
-                middle_frames_batch.append(middle_frame)
-                
-            # Extend output array by batch
-            output_frames.extend(middle_frames_batch)
-    
-            # Try to avoid a memory overflow by clearing cuda cache regularly
-            if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
-                soft_empty_cache()
-                number_of_frames_processed_since_last_cleared_cuda_cache = 0
+            middle_frame = return_middle_frame_function(
+                frame_0, 
+                frames[frame_itr + 1],
+                timestep,
+                *return_middle_frame_function_args
+            )
+            middle_frames_batch.append(middle_frame)
+            
+        # Extend output array by batch
+        output_frames.extend(middle_frames_batch)
+
+        # Try to avoid a memory overflow by clearing cuda cache regularly
+        if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
+            soft_empty_cache()
+            number_of_frames_processed_since_last_cleared_cuda_cache = 0
                 
     output_frames.append(frames[-1]) # Append final frame
     out = torch.cat(output_frames, dim=0)
     # clear cache for courtesy
     soft_empty_cache()
     return out
-    
