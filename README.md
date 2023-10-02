@@ -2,13 +2,15 @@
 
 A custom node set for Video Frame Interpolation in ComfyUI.
 
+Big thanks for styler00dollar for making [VSGAN-tensorrt-docker](https://github.com/styler00dollar/VSGAN-tensorrt-docker). About 99% the code of this repo comes from it.
+
 ## Nodes
 * KSampler Gradually Adding More Denoise (efficient)
 * GMFSS Fortuna VFI
 * IFRNet_VFI
 * IFUnet VFI
 * M2M VFI
-* RIFE VFI
+* RIFE VFI (Note that option `fast_mode` won't do anything from v4.5+ as `contextnet` is removed)
 * FILM VFI
 * Make Interpolation State List
 

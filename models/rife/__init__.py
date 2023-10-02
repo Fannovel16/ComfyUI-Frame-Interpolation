@@ -1,4 +1,8 @@
+#Temporarily seperate RIFE 4.7 and the rest
+#because styler00dollar's implementation of RIFE 4.7 (https://github.com/styler00dollar/VSGAN-tensorrt-docker/blob/main/src/rife_arch.py) doesn't work
+#the flow is broken
 from .rife_arch import IFNet
+from .rife_arch_47 import IFNet as IFNet47
 import torch
 from torch.utils.data import DataLoader
 import pathlib
@@ -14,7 +18,8 @@ CKPT_NAME_VER_DICT = {
     "rife43.pth": "4.3", 
     "rife44.pth": "4.3", 
     "rife45.pth": "4.5",
-    "rife46.pth": "4.6", 
+    "rife46.pth": "4.6",
+    "rife47.pth": "4.7",
     "sudo_rife4_269.662_testV1_scale1.pth": "4.0"
 }
 
@@ -74,7 +79,8 @@ class RIFE_VFI:
         """
         
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
-        interpolation_model = IFNet(arch_ver=CKPT_NAME_VER_DICT[ckpt_name])
+        arch_ver = CKPT_NAME_VER_DICT[ckpt_name]
+        interpolation_model = IFNet(arch_ver=arch_ver) if arch_ver != "4.7" else IFNet47()
         interpolation_model.load_state_dict(torch.load(model_path))
         interpolation_model.eval().to(get_torch_device())
         

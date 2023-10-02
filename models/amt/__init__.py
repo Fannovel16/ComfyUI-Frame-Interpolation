@@ -72,10 +72,11 @@ class AMT_VFI:
         def return_middle_frame(frame_0, frame_1, timestep, model):
             return model(
                 frame_0, 
-                frame_1, 
-                timestep, 
-                embt=torch.FloatTensor([timestep] * frame_0.shape[0]).view(frame_0.shape[0], 1, 1, 1).to(get_torch_device())
-            )
+                frame_1,
+                embt=torch.FloatTensor([timestep] * frame_0.shape[0]).view(frame_0.shape[0], 1, 1, 1).to(get_torch_device()),
+                scale_factor=1.0,
+                eval=True
+            )["imgt_pred"]
         
         args = [interpolation_model]
         out = postprocess_frames(

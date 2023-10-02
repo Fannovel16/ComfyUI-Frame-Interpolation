@@ -51,12 +51,13 @@ import torch.nn.functional as F
 from tqdm.auto import tqdm as std_tqdm
 from tqdm.auto import trange as std_trange
 from models.ops import FunctionSoftsplat, batch_edt
+from comfy.model_management import get_torch_device
 
-autocast = torch.cuda.amp.autocast
+device = get_torch_device()
+autocast = torch.autocast
 tqdm = partial(std_tqdm, dynamic_ncols=True)
 trange = partial(std_trange, dynamic_ncols=True)
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-device = torch.device("cuda")
 
 
 def pixel_ij(x, rounding=True):
@@ -901,14 +902,14 @@ class RFR(nn.Module):
         cdim = self.context_dim
 
         # run the feature network
-        with autocast(enabled=self.args.mixed_precision):
+        with autocast(device.type, enabled=self.args.mixed_precision):
             fmap1, fmap2 = self.fnet([image1, image2])
         fmap1 = fmap1.float()
         fmap2 = fmap2.float()
         corr_fn = CorrBlock(fmap1, fmap2, radius=self.args.corr_radius)
 
         # run the context network
-        with autocast(enabled=self.args.mixed_precision):
+        with autocast(device.type, enabled=self.args.mixed_precision):
             cnet = self.fnet(image1)
             net, inp = torch.split(cnet, [hdim, cdim], dim=1)
             net = torch.tanh(net)
@@ -928,7 +929,7 @@ class RFR(nn.Module):
             corr = corr_fn(coords1)  # index correlation volume
 
             flow = coords1 - coords0
-            with autocast(enabled=self.args.mixed_precision):
+            with autocast(device.type, enabled=self.args.mixed_precision):
                 net, up_mask, delta_flow = self.update_block(net, inp, corr, flow)
 
             # F(t+1) = F(t) + \Delta(t)

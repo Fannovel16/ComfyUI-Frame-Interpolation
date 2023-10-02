@@ -126,7 +126,7 @@ class GMFSS_Fortuna_VFI:
         """
         
         interpolation_model = CommonModelInference(model_type=ckpt_name)
-        interpolation_model.eval().to()
+        interpolation_model.eval().to(get_torch_device())
         
         frames = preprocess_frames(frames, get_torch_device())
             

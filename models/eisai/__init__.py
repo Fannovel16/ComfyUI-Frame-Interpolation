@@ -1,10 +1,8 @@
 import pathlib
-from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
 from .eisai_arch import SoftsplatLite, DTM, RAFT
 from comfy.model_management import soft_empty_cache, get_torch_device
 
@@ -41,35 +39,20 @@ class EISAI(nn.Module):
             out_dtm, _ = self.dtm(x, out_ssl, _, return_more=False)
         return out_dtm[:, :3]
 
-class EISAI_Loader:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {"required": {""}}
-
 class EISAI_VFI:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
-                "model": ("EISAI_MODEL", ),
+                "ckpt_name": (["eisai"], ),
                 "frames": ("IMAGE", ),
-                "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
-                "multipler": ("INT", {"default": 2, "min": 2, "max": 1000})
+                "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
+                "multiplier": ("INT", {"default": 2, "min": 2, "max": 1000}),
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
             }
         }
-    
-    @classmethod
-    def CKPT_NAMES(s):
-        return (["eisai"], {"default": EISAI})
-
-    @classmethod
-    def create_model(self, ckpt_name):
-        model = EISAI(MODEL_FILE_NAMES)
-        model.eval().to(get_torch_device())
-        return model
 
     RETURN_TYPES = ("IMAGE", )
     FUNCTION = "vfi"
@@ -77,36 +60,28 @@ class EISAI_VFI:
 
     def vfi(
         self,
-        model,
-        orig_frames: torch.Tensor,
-        batch_size: typing.SupportsInt = 1,
-        multipler: typing.SupportsInt = 2,
-        optional_interpolation_states: typing.Optional[typing.List[bool]] = None
+        ckpt_name: typing.AnyStr,
+        frames: torch.Tensor,
+        clear_cache_after_n_frames = 10,
+        multiplier: typing.SupportsInt = 2,
+        optional_interpolation_states: InterpolationStateList = None   
     ):
-        orig_frames = preprocess_frames(orig_frames, get_torch_device())
-        orig_frames = F.interpolate(orig_frames, size=(540, 960)) #EISAI forces the input to be 960x540 lol
-        frames_2d = [
-            [orig_frame.unsqueeze(0)] for orig_frame in orig_frames
-        ] 
-
-        if optional_interpolation_states is None:
-            interpolation_states = [True] * (orig_frames.shape[0] - 1)
-        else:
-            interpolation_states = optional_interpolation_states
-
-        enabled_former_idxs = [i for i, state in enumerate(interpolation_states) if state]
-        former_idxs_batches = [enabled_former_idxs[i:i + batch_size] for i in range(0, len(enabled_former_idxs), batch_size)] 
-
-        for former_idxs_batch in former_idxs_batches:
-            for middle_idx in range(1, multipler):
-                middle_frames = model(
-                    orig_frames[former_idxs_batch], 
-                    orig_frames[former_idxs_batch + 1], 
-                    t=middle_idx/multipler
-                )
-                
-                for _idx, former_idx in enumerate(former_idxs_batch):
-                    frames_2d[former_idx].append(middle_frames[_idx].unsqueeze(0))
-
-        out_frames = torch.cat([torch.cat(frames) for frames in frames_2d], dim=0)
-        return (postprocess_frames(out_frames), )
+        interpolation_model = EISAI(MODEL_FILE_NAMES)
+        interpolation_model.eval().to(get_torch_device())
+        
+        frames = preprocess_frames(frames, get_torch_device())
+            
+        # Ensure proper tensor dimensions
+        frames = [frame.unsqueeze(0) for frame in frames]
+        
+        def return_middle_frame(frame_0, frame_1, timestep, model):
+            return model(frame_0, frame_1, t=timestep)
+        
+        scale = 1
+        
+        args = [interpolation_model, scale]
+        out = postprocess_frames(
+            generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
+                               interpolation_states=optional_interpolation_states)
+        )
+        return (out,)
