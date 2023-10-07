@@ -23,9 +23,9 @@ Run install.bat
 
 For Window users, if you are having trouble with cupy, please run `install.bat` instead of `install-cupy.py` as only the former can detect ComfyUI portable.
 #### Linux
-Open your shell app and start venv if it is used for ComfyUI. Then `cd` to this extension's directory and run
+Open your shell app and start venv if it is used for ComfyUI. Run:
 ```
-./install
+python install.py
 ```
 ## Support for non-CUDA device (experimental)
 If you don't have a NVidia card, you can try `taichi` ops backend powered by [Taichi Lang](https://www.taichi-lang.org/)
