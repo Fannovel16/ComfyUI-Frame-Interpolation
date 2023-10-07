@@ -13,6 +13,7 @@ Big thanks for styler00dollar for making [VSGAN-tensorrt-docker](https://github.
 * RIFE VFI (4.0 - 4.7) (Note that option `fast_mode` won't do anything from v4.5+ as `contextnet` is removed)
 * FILM VFI
 * Make Interpolation State List
+* STMFNet VFI (requires at least 4 frames, can only do 2x interpolation for now)
 
 ## Install
 ### ComfyUI Manager
@@ -38,8 +39,16 @@ On Windows, you can install it by running `install.bat` or `pip install taichi` 
 
 Then change value of `ops_backend` from `cupy` to `taichi` in `config.yaml`
 
+If `NotImplementedError` appears, a VFI node in the workflow isn't supported by taichi
+
 ## Usage
-All VFI nodes are placed in `ComfyUI-Frame-Interpolation/VFI` and require a `IMAGE` containing frames (at least two).
+All VFI nodes are placed in `ComfyUI-Frame-Interpolation/VFI` and require a `IMAGE` containing frames (at least 2, or at least 4 for STMF-Net).
+
+Regarding STMFNet, if you only have two frames, you should use: Load Images -> Other VFI node (multiplier=3) -> STMFNet VFI
+
+Strictly speaking, the number of output frames is N * multiplier - 1 for most of VFI models and STMFNet with `duplicate_first_last_frames` enabled.
+
+`clear_cache_after_n_frames` is used to avoid out-of-memory. Increasing it makes the chance lower but also increases time.
 
 It is recommended to use LoadImages (LoadImagesFromDirectory) from [ComfyUI-Advanced-ControlNet](https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet/) and [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite) along side with this extension.
 

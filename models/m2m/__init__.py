@@ -5,7 +5,7 @@ import pathlib
 from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
 from .M2M_arch import M2M_PWC
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 from utils import InterpolationStateList, generic_frame_loop
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name

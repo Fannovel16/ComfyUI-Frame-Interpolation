@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 #from model.warplayer import warp
 # from train_log.refine import *
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 
 device = get_torch_device()
 backwarp_tenGrid = {}

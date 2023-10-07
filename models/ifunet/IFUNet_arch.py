@@ -9,7 +9,7 @@ https://github.com/98mxr/IFUNet/blob/main/model/ResynNet.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 
 backwarp_tenGrid = {}
 device = get_torch_device()

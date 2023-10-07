@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .GMFSS_Fortuna_arch import Model as GMFSS
 from .GMFSS_Fortuna_union_arch import Model as GMFSS_Union
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 
 
 GLOBAL_MODEL_TYPE = pathlib.Path(__file__).parent.name

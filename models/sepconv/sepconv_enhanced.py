@@ -7,7 +7,7 @@ Deleted stuffs about arguments_strModel and getopt
 #!/usr/bin/env python
 import torch
 import typing
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 
 ##########################################################
 from models.ops import sepconv_func

@@ -14,6 +14,7 @@ from models.rife import RIFE_VFI
 #from models.sepconv import SepconvVFI
 from models.amt import AMT_VFI
 from models.film import FILM_VFI
+from models.stmfnet import STMFNet_VFI
 from utils import MakeInterpolationStateList
 import models.ops as ops
 
@@ -31,5 +32,6 @@ NODE_CLASS_MAPPINGS = {
     "AMT VFI": AMT_VFI,
     "FILM VFI": FILM_VFI,
     "Make Interpolation State List": MakeInterpolationStateList,
+    "STMFNet VFI": STMFNet_VFI
 }
 

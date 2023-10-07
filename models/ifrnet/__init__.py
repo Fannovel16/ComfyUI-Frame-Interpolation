@@ -5,7 +5,7 @@ from utils import load_file_from_github_release, preprocess_frames, postprocess_
 import typing
 from .IFRNet_S_arch import IRFNet_S
 from .IFRNet_L_arch import IRFNet_L
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 from utils import generic_frame_loop, InterpolationStateList
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name

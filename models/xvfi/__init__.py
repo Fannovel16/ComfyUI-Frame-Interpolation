@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 import pathlib
 from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 
 CKPT_CONFIGS = {
     "XVFInet_X4K1000FPS_exp1_latest.pt": {

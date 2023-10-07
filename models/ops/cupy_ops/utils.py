@@ -26,7 +26,7 @@ def cuda_float32(fltIn: float):
 # end
 
 
-def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict):
+def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict, **replace_kwargs):
     if "device" not in objCudacache:
         objCudacache["device"] = torch.cuda.get_device_name()
     # end
@@ -203,6 +203,9 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict):
                 strTensor + "[" + str.join("+", strIndex) + "]",
             )
         # end
+
+        for replace_key, value in replace_kwargs.items():
+            strKernel = strKernel.replace(replace_key, value)
 
         objCudacache[strKey] = {"strFunction": strFunction, "strKernel": strKernel}
     # end

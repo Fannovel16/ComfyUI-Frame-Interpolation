@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from .common import *
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 
 class Encoder(nn.Module):
     def __init__(self, in_channels=3, depth=3, nf_start=32, norm=False):

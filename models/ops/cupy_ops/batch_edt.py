@@ -115,3 +115,5 @@ def batch_edt(img, block=1024):
     if expand:
         ans = ans.unsqueeze(1)
     return ans
+
+__all__ = ["batch_edt"]

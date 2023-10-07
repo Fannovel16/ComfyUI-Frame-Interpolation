@@ -26,7 +26,7 @@ import torch
 import math
 from models.rife.rife_arch import IFNet
 from models.ops import softsplat
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 
 device = get_torch_device()
 backwarp_tenGrid = {}

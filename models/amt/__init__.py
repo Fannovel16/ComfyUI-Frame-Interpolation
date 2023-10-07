@@ -5,7 +5,7 @@ import pathlib
 from utils import load_file_from_direct_url, preprocess_frames, postprocess_frames, generic_frame_loop
 import typing
 from .amt_arch import AMT_S, AMT_L, AMT_G, InputPadder
-from comfy.model_management import soft_empty_cache, get_torch_device
+from comfy.model_management import get_torch_device
 
 #https://github.com/MCG-NKU/AMT/tree/main/cfgs
 CKPT_CONFIGS = {

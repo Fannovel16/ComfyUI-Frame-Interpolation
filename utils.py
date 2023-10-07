@@ -132,6 +132,10 @@ def preprocess_frames(frames, device):
 def postprocess_frames(frames):
     return einops.rearrange(frames, "n c h w -> n h w c").cpu()
 
+def assert_batch_size(frames, batch_size=2, vfi_name=None):
+    subject_verb = "Most VFI models require" if vfi_name is None else f"{vfi_name} VFI model requires"
+    assert len(frames) >= batch_size, f"{subject_verb} at least {batch_size} frames to work with, only found {frames.shape[0]}. Please check the frame input using PreviewImage."
+
 def generic_frame_loop(
         frames,
         clear_cache_after_n_frames,
@@ -139,7 +143,8 @@ def generic_frame_loop(
         return_middle_frame_function,
         *return_middle_frame_function_args,
         interpolation_states: InterpolationStateList = None):
-    
+
+    assert_batch_size(frames) # Too lazy to include model name lol
     output_frames = []  # List to store processed frames in the correct order
 
     number_of_frames_processed_since_last_cleared_cuda_cache = 0
@@ -170,6 +175,7 @@ def generic_frame_loop(
         # Extend output array by batch
         output_frames.extend(middle_frames_batch)
 
+        number_of_frames_processed_since_last_cleared_cuda_cache += 1
         # Try to avoid a memory overflow by clearing cuda cache regularly
         if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
             soft_empty_cache()

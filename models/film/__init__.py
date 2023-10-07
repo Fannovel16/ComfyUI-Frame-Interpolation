@@ -1,9 +1,9 @@
 import torch
-from comfy.model_management import get_torch_device
+from comfy.model_management import get_torch_device, soft_empty_cache
 import bisect
 import numpy as np
 import typing
-from utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames, soft_empty_cache
+from utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames
 import pathlib
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
@@ -80,14 +80,13 @@ class FILM_VFI:
         number_of_frames_processed_since_last_cleared_cuda_cache = 0
         output_frames = []
         for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
-            frame_0 = frames[frame_itr]
-            
             if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
                 continue
             
-            relust = inference(model, frame_0, frames[frame_itr + 1], multiplier - 1)
+            relust = inference(model, frames[frame_itr], frames[frame_itr + 1], multiplier - 1)
             output_frames.extend(relust[:-1])
 
+            number_of_frames_processed_since_last_cleared_cuda_cache += 1
             # Try to avoid a memory overflow by clearing cuda cache regularly
             if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
                 soft_empty_cache()

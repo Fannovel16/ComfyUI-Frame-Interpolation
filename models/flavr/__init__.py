@@ -6,8 +6,8 @@ import einops
 import pathlib
 import typing
 from .flavr_arch import UNet_3D_3D
-from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
-from comfy.model_management import soft_empty_cache, get_torch_device
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, assert_batch_size
+from comfy.model_management import get_torch_device
 
 NBR_FRAME = 4
 
@@ -70,8 +70,7 @@ class FLAVR_VFI:
         frames: torch.Tensor,
         optional_interpolation_states: typing.Optional[list[bool]] = None
     ):
-        if len(frames) < NBR_FRAME:
-            raise RuntimeError(f"FLAVR requires at least {NBR_FRAME} frames to work with (found {len(frames)}).")
+        assert_batch_size(frames, NBR_FRAME, "FLAVR")
 
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         global model
