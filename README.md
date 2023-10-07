@@ -44,9 +44,9 @@ If `NotImplementedError` appears, a VFI node in the workflow isn't supported by 
 ## Usage
 All VFI nodes are placed in `ComfyUI-Frame-Interpolation/VFI` and require a `IMAGE` containing frames (at least 2, or at least 4 for STMF-Net).
 
-Regarding STMFNet, if you only have two frames, you should use: Load Images -> Other VFI node (multiplier=3) -> STMFNet VFI
+Regarding STMFNet, if you only have two frames, you should use: Load Images -> Other VFI node (FILM is recommended in this case) with `multiplier=3` -> STMFNet VFI
 
-Strictly speaking, the number of output frames is N * multiplier - 1 for most of VFI models and STMFNet with `duplicate_first_last_frames` enabled.
+The number of output frames is `N * multiplier - 1` for most of VFI models and STMFNet with `duplicate_first_last_frames` enabled.
 
 `clear_cache_after_n_frames` is used to avoid out-of-memory. Increasing it makes the chance lower but also increases time.
 
