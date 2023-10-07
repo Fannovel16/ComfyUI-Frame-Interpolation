@@ -16,12 +16,16 @@ Big thanks for styler00dollar for making [VSGAN-tensorrt-docker](https://github.
 
 ## Install
 ### ComfyUI Manager
+Incompatibile issue with it is now fixed
+
+Following this guide to install this extension
+
 https://github.com/ltdrdata/ComfyUI-Manager#how-to-use
 ### Command-line
 #### Windows
 Run install.bat
 
-For Window users, if you are having trouble with cupy, please run `install.bat` instead of `install-cupy.py` as only the former can detect ComfyUI portable.
+For Window users, if you are having trouble with cupy, please run `install.bat` instead of `install-cupy.py` or `python install.py`.
 #### Linux
 Open your shell app and start venv if it is used for ComfyUI. Run:
 ```

@@ -17,11 +17,24 @@ def get_cuda_ver(nvrtc):
 
 s_param = '-s' if "python_embeded" in sys.executable else '' 
 
+def temp_add_cuda_home():
+    if "CUDA_HOME" not in os.environ:
+        import torch
+        torch_lib_path = Path(torch.__file__).parent / "lib"
+        torch_lib_path = str(torch_lib_path.resolve())
+        if os.path.exists(torch_lib_path):
+            os.environ["CUDA_HOME"] = torch_lib_path
+        else:
+            os.environ["CUDA_HOME"] = "/usr/local/cuda/"
+
 def install_cupy():
     try:
+        temp_add_cuda_home()
         import cupy
         print("CuPy is already installed.")
-    except:
+    except Exception as e:
+        print(e)
+        print("Trying to install cupy...")
         cuda_ver = None
         cuda_ver = None
         if "CUDA_HOME" not in os.environ:
@@ -38,7 +51,9 @@ def install_cupy():
 
 with open("requirements-no-cupy.txt", 'r') as f:
     for package in f.readlines():
+        package = package.strip()
+        print(f"Installing {package}...")
         os.system(f'"{sys.executable}" {s_param} -m pip install {package}')
 
-print("Installing cupy...")
+print("Checking cupy...")
 install_cupy()
