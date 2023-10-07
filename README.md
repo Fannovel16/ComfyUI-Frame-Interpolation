@@ -48,7 +48,7 @@ Regarding STMFNet, if you only have two or three frames, you should use: Load Im
 
 The number of output frames is `N * multiplier - 1` for most of VFI models and STMFNet with `duplicate_first_last_frames` enabled.
 
-`clear_cache_after_n_frames` is used to avoid out-of-memory. Increasing it makes the chance lower but also increases time.
+`clear_cache_after_n_frames` is used to avoid out-of-memory. Decreasing it makes the chance lower but also increases processing time.
 
 It is recommended to use LoadImages (LoadImagesFromDirectory) from [ComfyUI-Advanced-ControlNet](https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet/) and [ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite) along side with this extension.
 
