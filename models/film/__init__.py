@@ -81,12 +81,12 @@ class FILM_VFI:
         output_frames = []
         for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
             frame_0 = frames[frame_itr]
-            output_frames.append(frame_0) # Start with first frame
             
             if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
                 continue
             
-            output_frames.extend(inference(model, frame_0, frames[frame_itr + 1], multiplier - 1))
+            relust = inference(model, frame_0, frames[frame_itr + 1], multiplier - 1)
+            output_frames.extend(relust[:-1])
 
             # Try to avoid a memory overflow by clearing cuda cache regularly
             if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
