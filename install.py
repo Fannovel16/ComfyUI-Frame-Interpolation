@@ -33,8 +33,9 @@ def install_cupy():
         import cupy
         print("CuPy is already installed.")
     except Exception as e:
-        print(e)
-        print("Trying to install cupy...")
+        print("Uninstall cupy if existed...")
+        os.system(f'"{sys.executable}" {s_param} -m pip uninstall -y cupy-wheel cupy-cuda102 cupy-cuda110 cupy-cuda111 cupy-cuda11x cupy-cuda12x')
+        print("Installing cupy...")
         cuda_ver = None
         cuda_ver = None
         if "CUDA_HOME" not in os.environ:
