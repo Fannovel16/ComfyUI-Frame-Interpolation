@@ -7,3 +7,4 @@ scipy
 Pillow
 torchvision
 tqdm
+timm==0.6.13

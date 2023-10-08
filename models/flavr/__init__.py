@@ -1,51 +1,28 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-import einops
-import pathlib
+from comfy.model_management import get_torch_device, soft_empty_cache
+import numpy as np
 import typing
+from utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames, assert_batch_size
+import pathlib
+import warnings
 from .flavr_arch import UNet_3D_3D
-from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, assert_batch_size
-from comfy.model_management import get_torch_device
 
+device = get_torch_device()
 NBR_FRAME = 4
 
-class FLAVR_Inference(nn.Module):
-    def __init__(self, model_path) -> None:
-        super(FLAVR_Inference, self).__init__()
-        sd = torch.load(model_path)['state_dict']
-        sd = {k.partition("module.")[-1]:v for k,v in sd.items()}
+def build_flavr(model_path):
+    sd = torch.load(model_path)['state_dict']
+    sd = {k.partition("module.")[-1]:v for k,v in sd.items()}
 
-        #Ref: Class UNet_3D_3D
-        self.model = UNet_3D_3D("unet_18", n_inputs=NBR_FRAME, n_outputs=sd["outconv.1.weight"].shape[0] // 3, joinType="concat" , upmode="transpose")
-        self.model.load_state_dict(sd)
-        self.model.to(get_torch_device()).eval()
-        del sd
-    
-    def forward(self, frame_tensor):
-        """
-        Expect a Tensor of size 4CHW.
-
-        Ref: https://github.com/tarun005/FLAVR/blob/main/interpolate.py
-
-        Why the hell the author transposes the tensor THWC -> CTHW -> CHW -> 1CHW?
-
-        Why don't just use TCHW?
-        """
-        frame_amount = len(frame_tensor)
-        if frame_amount != NBR_FRAME:
-            raise RuntimeError(f"FLAVR FVI model requires {NBR_FRAME} frames to work with (found {frame_amount}).")
-
-        outputs = self.model([frame.unsqueeze(0) for frame in torch.unbind(frame_tensor, dim=0)])
-        outputs.append(frame_tensor[2].unsqueeze(0))
-
-        return torch.cat(outputs, dim=0)
-
+    #Ref: Class UNet_3D_3D
+    model = UNet_3D_3D("unet_18", n_inputs=NBR_FRAME, n_outputs=sd["outconv.1.weight"].shape[0] // 3, joinType="concat" , upmode="transpose")
+    model.load_state_dict(sd)
+    model.to(device).eval()
+    del sd
+    return model
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
 CKPT_NAMES = ["FLAVR_2x.pth", "FLAVR_4x.pth", "FLAVR_8x.pth"]
-
 
 class FLAVR_VFI:
     @classmethod
@@ -53,7 +30,10 @@ class FLAVR_VFI:
         return {
             "required": {
                 "ckpt_name": (CKPT_NAMES, ),
-                "frames": ("IMAGE", )
+                "frames": ("IMAGE", ),
+                "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
+                "multiplier": ("INT", {"default": 2, "min": 2, "max": 2}), #TODO: Implement recursively invoking interpolator for multi-frame interpolation
+                "duplicate_first_last_frames": ("BOOLEAN", {"default": False})
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
@@ -62,41 +42,58 @@ class FLAVR_VFI:
     
     RETURN_TYPES = ("IMAGE", )
     FUNCTION = "vfi"
-    CATEGORY = "ComfyUI-Frame-Interpolation/VFI"
-    
+    CATEGORY = "ComfyUI-Frame-Interpolation/VFI"        
+
+    #Reference: https://github.com/danier97/ST-MFNet/blob/main/interpolate_yuv.py#L93
     def vfi(
         self,
-        ckpt_name: typing.AnyStr, 
+        ckpt_name: typing.AnyStr,
         frames: torch.Tensor,
-        optional_interpolation_states: typing.Optional[list[bool]] = None
+        clear_cache_after_n_frames = 10,
+        multiplier: typing.SupportsInt = 2,
+        duplicate_first_last_frames: bool = False,
+        optional_interpolation_states: InterpolationStateList = None   
     ):
-        assert_batch_size(frames, NBR_FRAME, "FLAVR")
+        if multiplier != 2:
+            warnings.warn("Currently, FLAVR only supports 2x interpolation. The process will continue but please set multiplier=2 afterward")
 
+        assert_batch_size(frames, batch_size=4, vfi_name="ST-MFNet")
+        interpolation_states = optional_interpolation_states
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
-        global model
-        model = FLAVR_Inference(model_path)
-        frames = preprocess_frames(frames, get_torch_device())
+        model = build_flavr(model_path)
+        frames = preprocess_frames(frames, device)
+        # Ensure proper tensor dimensions
+        frames = [frame.unsqueeze(0) for frame in frames]
 
-        if optional_interpolation_states is None:
-            interpolation_states = [True] * (frames.shape[0] - 1)
-        else:
-            interpolation_states = optional_interpolation_states
+        number_of_frames_processed_since_last_cleared_cuda_cache = 0
+        output_frames = []
+        for frame_itr in range(len(frames) - 3):
+            #Does skipping frame i+1 make sanse in this case?
+            if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr) and interpolation_states.is_frame_skipped(frame_itr + 1):
+                continue
+            
+            frame0, frame1, frame2, frame3 = frames[frame_itr], frames[frame_itr + 1], frames[frame_itr + 2], frames[frame_itr + 3]
+            new_frame = model([frame0, frame1, frame2, frame3])[0]
+            number_of_frames_processed_since_last_cleared_cuda_cache += 2
+            
+            if frame_itr == 0:
+                output_frames.append(frame0)
+                if duplicate_first_last_frames:
+                    output_frames.append(frame0) # repeat the first frame
+                output_frames.append(frame1)
+            output_frames.append(new_frame)
+            output_frames.append(frame2)
+            if frame_itr == len(frames) - 4:
+                output_frames.append(frame3)
+                if duplicate_first_last_frames:
+                    output_frames.append(frame3) # repeat the last frame
 
-        enabled_former_idxs = [i for i, state in enumerate(interpolation_states) if state]
-        frame_idx_batches = torch.tensor(range(len(frames))).type(torch.long).view(1,-1).unfold(1,size=NBR_FRAME,step=1).squeeze(0)
-        """
-        Example: tensor([[0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5]])
-        """
-        #Ref: https://github.com/tarun005/FLAVR/blob/main/interpolate.py#L146
-        #Someone explains how this index batch thing works plz
-
-        out_frames = [frames[frame_idx_batches[0][1]]]
-        for frame_idx_batch in frame_idx_batches:
-            if (frame_idx_batch[0] in enabled_former_idxs) or (frame_idx_batch[2] in enabled_former_idxs):
-                print(frames[frame_idx_batch].shape)
-                out_frames.extend(model(frames[frame_idx_batch]))
-            else:
-                #Dunno if this line is right lol
-                out_frames.extend([frames[frame_idx_batch[0]].unsqueeze(0), frames[frame_idx_batch[1]].unsqueeze(0)])
-
-        return (postprocess_frames(torch.stack(out_frames)), )
+            # Try to avoid a memory overflow by clearing cuda cache regularly
+            if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
+                soft_empty_cache()
+                number_of_frames_processed_since_last_cleared_cuda_cache = 0
+        
+        out = torch.cat(output_frames, dim=0)
+        # clear cache for courtesy
+        soft_empty_cache()
+        return (postprocess_frames(out), )

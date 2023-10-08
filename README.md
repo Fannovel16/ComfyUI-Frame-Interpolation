@@ -14,6 +14,7 @@ Big thanks for styler00dollar for making [VSGAN-tensorrt-docker](https://github.
 * FILM VFI
 * Make Interpolation State List
 * STMFNet VFI (requires at least 4 frames, can only do 2x interpolation for now)
+* FLAVR VFI (same conditions as STMFNet)
 
 ## Install
 ### ComfyUI Manager
@@ -44,9 +45,7 @@ If `NotImplementedError` appears, a VFI node in the workflow isn't supported by 
 ## Usage
 All VFI nodes are placed in `ComfyUI-Frame-Interpolation/VFI` and require a `IMAGE` containing frames (at least 2, or at least 4 for STMF-Net).
 
-Regarding STMFNet, if you only have two or three frames, you should use: Load Images -> Other VFI node (FILM is recommended in this case) with `multiplier=3` -> STMFNet VFI
-
-The number of output frames is `N * multiplier - 1` for most of VFI models and STMFNet with `duplicate_first_last_frames` enabled.
+Regarding STMFNet, if you only have two or three frames, you should use: Load Images -> Other VFI node (FILM is recommended in this case) with `multiplier=4` -> STMFNet VFI
 
 `clear_cache_after_n_frames` is used to avoid out-of-memory. Decreasing it makes the chance lower but also increases processing time.
 
