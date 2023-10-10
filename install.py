@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import sys
+import platform
 
 def get_cuda_ver(nvrtc):
     if ('102' in nvrtc) or ('10.2' in nvrtc):
@@ -19,26 +20,34 @@ s_param = '-s' if "python_embeded" in sys.executable else ''
 
 def temp_add_cuda_home():
     if "CUDA_HOME" not in os.environ:
-        import torch
-        torch_lib_path = Path(torch.__file__).parent / "lib"
-        torch_lib_path = str(torch_lib_path.resolve())
-        if os.path.exists(torch_lib_path):
-            os.environ["CUDA_HOME"] = torch_lib_path
+        if platform.system() == "Windows":
+            os.environ["CUDA_HOME"] = str((Path(__file__).parent / "models/ops/cupy_ops/cuda_dlls").resolve())
         else:
-            os.environ["CUDA_HOME"] = "/usr/local/cuda/"
+            import torch
+            torch_lib_path = Path(torch.__file__).parent / "lib"
+            torch_lib_path = str(torch_lib_path.resolve())
+            if os.path.exists(torch_lib_path):
+                os.environ["CUDA_HOME"] = torch_lib_path
+            else:
+                os.environ["CUDA_HOME"] = "/usr/local/cuda/"
 
 def install_cupy():
     try:
         temp_add_cuda_home()
+        print(os.environ["CUDA_HOME"])
         import cupy
         print("CuPy is already installed.")
-    except Exception as e:
+    except Exception:
         print("Uninstall cupy if existed...")
         os.system(f'"{sys.executable}" {s_param} -m pip uninstall -y cupy-wheel cupy-cuda102 cupy-cuda110 cupy-cuda111 cupy-cuda11x cupy-cuda12x')
         print("Installing cupy...")
         cuda_ver = None
-        cuda_ver = None
-        if "CUDA_HOME" not in os.environ:
+
+        #./models/ops/cupy_ops/cuda_dlls
+        if platform.system() == "Windows":
+            cuda_ver = "12x"
+
+        if (cuda_ver is None) and ("CUDA_HOME" not in os.environ):
             import torch
             torch_lib_path = Path(torch.__file__).parent / "lib"
             torch_lib_path = str(torch_lib_path.resolve())

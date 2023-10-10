@@ -4,7 +4,7 @@ import re
 import torch
 import typing
 from pathlib import Path
-import sys
+import platform
 
 ##########################################################
 
@@ -219,14 +219,17 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict, **r
 @cupy.memoize(for_each_device=True)
 def cuda_launch(strKey: str):
     if "CUDA_HOME" not in os.environ:
-        import torch
-        torch_lib_path = Path(torch.__file__).parent / "lib"
-        torch_lib_path = str(torch_lib_path.resolve())
-        if os.path.exists(torch_lib_path):
-            os.environ["CUDA_HOME"] = torch_lib_path
+        if platform.system() == "Windows":
+            os.environ["CUDA_HOME"] = str(Path(__file__).parent / "cuda_dlls")
         else:
-            os.environ["CUDA_HOME"] = "/usr/local/cuda/"
-
+            import torch
+            torch_lib_path = Path(torch.__file__).parent / "lib"
+            torch_lib_path = str(torch_lib_path.resolve())
+            if os.path.exists(torch_lib_path):
+                os.environ["CUDA_HOME"] = torch_lib_path
+            else:
+                os.environ["CUDA_HOME"] = "/usr/local/cuda/"
+    
     # print(objCudacache[strKey]['strKernel'])
     # return cupy.cuda.compile_with_cache(objCudacache[strKey]['strKernel'], tuple(['-I ' + os.environ['CUDA_HOME'], '-I ' + os.environ['CUDA_HOME'] + '/include'])).get_function(objCudacache[strKey]['strFunction'])
     return cupy.RawModule(code=objCudacache[strKey]["strKernel"]).get_function(
