@@ -83,16 +83,17 @@ RIFE with IFUNet, FusionNet and RefineNet
 
 https://github.com/98mxr/IFUNet
 ### M2M
-
-    @InProceedings{hu2022m2m,
+```bibitext
+@InProceedings{hu2022m2m,
     title={Many-to-many Splatting for Efficient Video Frame Interpolation},
     author={Hu, Ping and Niklaus, Simon and Sclaroff, Stan and Saenko, Kate},
     journal={CVPR},
     year={2022}
     }
+```
 
 ### RIFE
-```
+```bibitext
 @inproceedings{huang2022rife,
   title={Real-Time Intermediate Flow Estimation for Video Frame Interpolation},
   author={Huang, Zhewei and Zhang, Tianyuan and Heng, Wen and Shi, Boxin and Zhou, Shuchang},
@@ -104,7 +105,7 @@ https://github.com/98mxr/IFUNet
 ### FILM
 [Frame interpolation in PyTorch](https://github.com/dajes/frame-interpolation-pytorch)
 
-```
+```bibitext
 @inproceedings{reda2022film,
  title = {FILM: Frame Interpolation for Large Motion},
  author = {Fitsum Reda and Janne Kontkanen and Eric Tabellion and Deqing Sun and Caroline Pantofaru and Brian Curless},
@@ -113,7 +114,7 @@ https://github.com/98mxr/IFUNet
 }
 ```
 
-```
+```bibitext
 @misc{film-tf,
   title = {Tensorflow 2 Implementation of "FILM: Frame Interpolation for Large Motion"},
   author = {Fitsum Reda and Janne Kontkanen and Eric Tabellion and Deqing Sun and Caroline Pantofaru and Brian Curless},
@@ -125,7 +126,7 @@ https://github.com/98mxr/IFUNet
 ```
 
 ### Sepconv
-```
+```bibitext
 [1]  @inproceedings{Niklaus_WACV_2021,
          author = {Simon Niklaus and Long Mai and Oliver Wang},
          title = {Revisiting Adaptive Convolutions for Video Frame Interpolation},
@@ -134,7 +135,7 @@ https://github.com/98mxr/IFUNet
      }
 ```
 
-```
+```bibitext
 [2]  @inproceedings{Niklaus_ICCV_2017,
          author = {Simon Niklaus and Long Mai and Feng Liu},
          title = {Video Frame Interpolation via Adaptive Separable Convolution},
@@ -143,7 +144,7 @@ https://github.com/98mxr/IFUNet
      }
 ```
 
-```
+```bibitext
 [3]  @inproceedings{Niklaus_CVPR_2017,
          author = {Simon Niklaus and Long Mai and Feng Liu},
          title = {Video Frame Interpolation via Adaptive Convolution},
@@ -163,7 +164,7 @@ https://github.com/98mxr/IFUNet
    ```
 
 ### ST-MFNet
-```
+```bibitext
 @InProceedings{Danier_2022_CVPR,
     author    = {Danier, Duolikun and Zhang, Fan and Bull, David},
     title     = {ST-MFNet: A Spatio-Temporal Multi-Flow Network for Frame Interpolation},
@@ -175,7 +176,7 @@ https://github.com/98mxr/IFUNet
 ```
 
 ### FLAVR
-``` text
+```bibitext
 @article{kalluri2021flavr,
   title={FLAVR: Flow-Agnostic Video Representations for Fast Frame Interpolation},
   author={Kalluri, Tarun and Pathak, Deepak and Chandraker, Manmohan and Tran, Du},
