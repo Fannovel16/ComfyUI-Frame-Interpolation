@@ -10,7 +10,7 @@ MODEL_TYPE = pathlib.Path(__file__).parent.name
 CKPT_NAMES = ["pretrained_cain.pth"]
 
 
-class CAINVFI:
+class CAIN_VFI:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -18,7 +18,7 @@ class CAINVFI:
                 "ckpt_name": (CKPT_NAMES, ),
                 "frames": ("IMAGE", ),
                 "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
-                "multiplier": ("INT", {"default": 2, "min": 2, "max": 1000})
+                "multiplier": ("INT", {"default": 2, "min": 2, "max": 2})
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
