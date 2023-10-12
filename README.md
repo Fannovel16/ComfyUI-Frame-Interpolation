@@ -71,12 +71,14 @@ The All-In-One GMFSS: Dedicated for Anime Video Frame Interpolation
 https://github.com/98mxr/GMFSS_Fortuna
 
 ### IFRNet
-<pre><code>@InProceedings{Kong_2022_CVPR, 
+```bibtex
+@InProceedings{Kong_2022_CVPR, 
   author = {Kong, Lingtong and Jiang, Boyuan and Luo, Donghao and Chu, Wenqing and Huang, Xiaoming and Tai, Ying and Wang, Chengjie and Yang, Jie}, 
   title = {IFRNet: Intermediate Feature Refine Network for Efficient Frame Interpolation}, 
   booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)}, 
   year = {2022}
-}</code></pre>
+}
+```
 
 ### IFUnet
 RIFE with IFUNet, FusionNet and RefineNet
