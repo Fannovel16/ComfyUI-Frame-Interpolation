@@ -50,11 +50,11 @@ def install_cupy():
         cupy_package = f"cupy-cuda{cuda_ver}" if cuda_ver is not None else "cupy-wheel"
         os.system(f'"{sys.executable}" {s_param} -m pip install {cupy_package}')
 
-""" with open(Path(__file__).parent / "requirements-no-cupy.txt", 'r') as f:
+with open(Path(__file__).parent / "requirements-no-cupy.txt", 'r') as f:
     for package in f.readlines():
         package = package.strip()
         print(f"Installing {package}...")
-        os.system(f'"{sys.executable}" {s_param} -m pip install {package}') """
+        os.system(f'"{sys.executable}" {s_param} -m pip install {package}')
 
 print("Checking cupy...")
 install_cupy()
