@@ -8,6 +8,7 @@ import traceback
 import einops
 import torchvision.transforms.functional as transform
 from comfy.model_management import soft_empty_cache, get_torch_device
+import numpy as np
 
 BASE_MODEL_DOWNLOAD_URLS = [
     "https://github.com/styler00dollar/VSGAN-tensorrt-docker/releases/download/models/",
@@ -109,23 +110,6 @@ def load_file_from_github_release(model_type, ckpt_name):
 def load_file_from_direct_url(model_type, url):
     return load_file_from_url(url, get_ckpt_container_path(model_type))
 
-
-def non_timestep_inference(model, I0, I1, multipler, **kwargs):
-    """
-    Return shape: (T, N, C, H, W), T = multipler - 1
-    """
-    batch_frames = [I0] + [None] * (multipler - 1) + [I1]
-    middle_i = len(batch_frames) // 2
-    batch_frames[middle_i] = model(I0, I1)
-
-    for i in range(middle_i - 1, 0, -1):
-        batch_frames[i] = model(batch_frames[0], batch_frames[i + 1], **kwargs)
-
-    for i in range(middle_i + 1, len(batch_frames) - 1):
-        batch_frames[i] = model(batch_frames[i - 1], batch_frames[-1], **kwargs)
-
-    return torch.stack(batch_frames, dim=0)
-
 def preprocess_frames(frames, device):
     return einops.rearrange(frames.to(device), "n h w c -> n c h w")
 
@@ -142,7 +126,20 @@ def generic_frame_loop(
         multiplier: typing.SupportsInt,
         return_middle_frame_function,
         *return_middle_frame_function_args,
-        interpolation_states: InterpolationStateList = None):
+        interpolation_states: InterpolationStateList = None,
+        use_timestep=True):
+
+    #https://github.com/hzwer/Practical-RIFE/blob/main/inference_video.py#L169
+    def non_timestep_inference(frame_0, frame_1, n):        
+        middle = return_middle_frame_function(frame_0, frame_1, None, *return_middle_frame_function_args)
+        if n == 1:
+            return [middle]
+        first_half = non_timestep_inference(frame_0, middle, n=n//2)
+        second_half = non_timestep_inference(middle, frame_1, n=n//2)
+        if n%2:
+            return [*first_half, middle, *second_half]
+        else:
+            return [*first_half, *second_half]
 
     assert_batch_size(frames) # Too lazy to include model name lol
     output_frames = []  # List to store processed frames in the correct order
@@ -160,18 +157,21 @@ def generic_frame_loop(
         # Generate and append a batch of middle frames
         middle_frames_batch = []
 
-        # Generate and append a middle frame per multiplier - 1
-        for middle_i in range(1, multiplier):
-            timestep = middle_i/multiplier
-            
-            middle_frame = return_middle_frame_function(
-                frame_0, 
-                frames[frame_itr + 1],
-                timestep,
-                *return_middle_frame_function_args
-            )
-            middle_frames_batch.append(middle_frame)
-            
+        if use_timestep:
+            for middle_i in range(1, multiplier):
+                timestep = middle_i/multiplier
+                
+                middle_frame = return_middle_frame_function(
+                    frame_0, 
+                    frames[frame_itr + 1],
+                    timestep,
+                    *return_middle_frame_function_args
+                )
+                middle_frames_batch.append(middle_frame)
+        else:
+            middle_frames = non_timestep_inference(frame_0, frames[frame_itr + 1], multiplier - 1)
+            middle_frames_batch.extend(middle_frames)
+        
         # Extend output array by batch
         output_frames.extend(middle_frames_batch)
 
@@ -186,3 +186,24 @@ def generic_frame_loop(
     # clear cache for courtesy
     soft_empty_cache()
     return out
+
+""" def generic_4frame_loop(
+        frames,
+        clear_cache_after_n_frames,
+        multiplier: typing.SupportsInt,
+        return_middle_frame_function,
+        *return_middle_frame_function_args,
+        interpolation_states: InterpolationStateList = None,
+        use_timestep=False):
+    
+    if use_timestep: raise NotImplementedError("Timestep 4 frame VFI model")
+    def non_timestep_inference(frame_0, frame_1, frame_2, frame_3, n):        
+        middle = return_middle_frame_function(frame_0, frame_1, None, *return_middle_frame_function_args)
+        if n == 1:
+            return [middle]
+        first_half = non_timestep_inference(frame_0, middle, n=n//2)
+        second_half = non_timestep_inference(middle, frame_1, n=n//2)
+        if n%2:
+            return [*first_half, middle, *second_half]
+        else:
+            return [*first_half, *second_half] """

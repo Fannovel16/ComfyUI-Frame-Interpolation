@@ -12,6 +12,9 @@ Big thanks for styler00dollar for making [VSGAN-tensorrt-docker](https://github.
 * M2M VFI
 * RIFE VFI (4.0 - 4.7) (Note that option `fast_mode` won't do anything from v4.5+ as `contextnet` is removed)
 * FILM VFI
+* M2M VFI
+* Sepconv VFI
+* AMT VFI
 * Make Interpolation State List
 * STMFNet VFI (requires at least 4 frames, can only do 2x interpolation for now)
 * FLAVR VFI (same conditions as STMFNet)

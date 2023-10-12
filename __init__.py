@@ -9,9 +9,9 @@ from .other_nodes import Gradually_More_Denoise_KSampler
 from models.gmfss_fortuna import GMFSS_Fortuna_VFI
 from models.ifrnet import IFRNet_VFI
 from models.ifunet import IFUnet_VFI
-#from models.m2m import M2M_VFI
+from models.m2m import M2M_VFI
 from models.rife import RIFE_VFI
-#from models.sepconv import SepconvVFI
+from models.sepconv import SepconvVFI
 from models.amt import AMT_VFI
 from models.film import FILM_VFI
 from models.stmfnet import STMFNet_VFI
@@ -28,9 +28,9 @@ NODE_CLASS_MAPPINGS = {
     "GMFSS Fortuna VFI": GMFSS_Fortuna_VFI,
     "IFRNet VFI": IFRNet_VFI,
     "IFUnet VFI": IFUnet_VFI,
-#    "M2M VFI": M2M_VFI,
+    "M2M VFI": M2M_VFI,
     "RIFE VFI": RIFE_VFI,
-#    "Sepconv VFI": SepconvVFI,
+    "Sepconv VFI": SepconvVFI,
     "AMT VFI": AMT_VFI,
     "FILM VFI": FILM_VFI,
     "Make Interpolation State List": MakeInterpolationStateList,

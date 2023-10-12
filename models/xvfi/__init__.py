@@ -72,7 +72,7 @@ class XVFI:
         frames: torch.Tensor, 
         batch_size: typing.SupportsInt = 1,
         multipler: typing.SupportsInt = 2,
-        optional_interpolation_states: typing.Optional[list[bool]] = None
+        optional_interpolation_states: InterpolationStateList = None
     ):
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         ckpt_config = CKPT_CONFIGS[ckpt_name]

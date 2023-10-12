@@ -2,7 +2,7 @@ from .cain_arch import CAIN
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release, non_timestep_inference, preprocess_frames, postprocess_frames, generic_frame_loop
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
 from comfy.model_management import get_torch_device
 
@@ -18,7 +18,7 @@ class CAIN_VFI:
                 "ckpt_name": (CKPT_NAMES, ),
                 "frames": ("IMAGE", ),
                 "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
-                "multiplier": ("INT", {"default": 2, "min": 2, "max": 2})
+                "multiplier": ("INT", {"default": 2, "min": 2, "max": 1000})
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
@@ -35,7 +35,7 @@ class CAIN_VFI:
         frames: torch.Tensor, 
         clear_cache_after_n_frames: typing.SupportsInt = 1,
         multiplier: typing.SupportsInt = 2,
-        optional_interpolation_states: typing.Optional[list[bool]] = None
+        optional_interpolation_states: InterpolationStateList = None
     ):
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         sd = torch.load(model_path)["state_dict"]
@@ -54,11 +54,12 @@ class CAIN_VFI:
         frames = [frame.unsqueeze(0) for frame in frames]
         
         def return_middle_frame(frame_0, frame_1, timestep, model):
-            return model(frame_0, frame_1, timestep)
+            #CAIN does some direct modifications to input frame tensors so we need to clone them
+            return model(frame_0.detach().clone(), frame_1.detach().clone())[0]
         
         args = [interpolation_model]
         out = postprocess_frames(
             generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
-                               interpolation_states=optional_interpolation_states)
+                               interpolation_states=optional_interpolation_states, use_timestep=False)
         )
         return (out,)

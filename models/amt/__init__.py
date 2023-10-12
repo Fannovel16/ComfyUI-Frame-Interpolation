@@ -2,7 +2,7 @@ import pathlib
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_direct_url, preprocess_frames, postprocess_frames, generic_frame_loop
+from utils import load_file_from_direct_url, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
 from .amt_arch import AMT_S, AMT_L, AMT_G, InputPadder
 from comfy.model_management import get_torch_device
@@ -56,7 +56,7 @@ class AMT_VFI:
         frames: torch.Tensor, 
         clear_cache_after_n_frames: typing.SupportsInt = 1,
         multiplier: typing.SupportsInt = 2,
-        optional_interpolation_states: typing.Optional[list[bool]] = None
+        optional_interpolation_states: InterpolationStateList = None
     ):
         model_path = load_file_from_direct_url(MODEL_TYPE, f"https://huggingface.co/lalala125/AMT/resolve/main/{ckpt_name}")
         ckpt_config = CKPT_CONFIGS[ckpt_name]
