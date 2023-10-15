@@ -5,6 +5,7 @@ import pathlib
 from utils import load_file_from_direct_url, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
 from comfy.model_management import get_torch_device
+from .amt_arch import AMT_S, AMT_L, AMT_G, InputPadder
 
 #https://github.com/MCG-NKU/AMT/tree/main/cfgs
 CKPT_CONFIGS = {
@@ -57,7 +58,6 @@ class AMT_VFI:
         multiplier: typing.SupportsInt = 2,
         optional_interpolation_states: InterpolationStateList = None
     ):
-        from .amt_arch import AMT_S, AMT_L, AMT_G, InputPadder
         model_path = load_file_from_direct_url(MODEL_TYPE, f"https://huggingface.co/lalala125/AMT/resolve/main/{ckpt_name}")
         ckpt_config = CKPT_CONFIGS[ckpt_name]
 
