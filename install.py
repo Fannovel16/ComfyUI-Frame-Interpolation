@@ -40,6 +40,7 @@ def install_cupy():
     try:
         if cuda_home is not None:
             os.environ["CUDA_HOME"] = cuda_home
+            os.environ["CUDA_PATH"] = cuda_home
         import cupy
         print("CuPy is already installed.")
     except:
