@@ -1,4 +1,3 @@
-from .cain_arch import CAIN
 import torch
 from torch.utils.data import DataLoader
 import pathlib
@@ -37,6 +36,7 @@ class CAIN_VFI:
         multiplier: typing.SupportsInt = 2,
         optional_interpolation_states: InterpolationStateList = None
     ):
+        from .cain_arch import CAIN
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         sd = torch.load(model_path)["state_dict"]
         sd = {key.replace('module.', ''): value for key, value in sd.items()}

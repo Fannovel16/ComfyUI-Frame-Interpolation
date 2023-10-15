@@ -5,12 +5,12 @@ import typing
 from utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames, assert_batch_size
 import pathlib
 import warnings
-from .flavr_arch import UNet_3D_3D
 
 device = get_torch_device()
 NBR_FRAME = 4
 
 def build_flavr(model_path):
+    from .flavr_arch import UNet_3D_3D
     sd = torch.load(model_path)['state_dict']
     sd = {k.partition("module.")[-1]:v for k,v in sd.items()}
 

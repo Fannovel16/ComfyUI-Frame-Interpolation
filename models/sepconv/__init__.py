@@ -1,4 +1,3 @@
-from .sepconv_enhanced import Network
 import torch
 from torch.utils.data import DataLoader
 import pathlib
@@ -38,6 +37,7 @@ class SepconvVFI:
         multiplier: typing.SupportsInt = 2,
         optional_interpolation_states: InterpolationStateList = None
     ):
+        from .sepconv_enhanced import Network
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         interpolation_model = Network()
         interpolation_model.load_state_dict(torch.load(model_path))

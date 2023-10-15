@@ -1,8 +1,6 @@
 #Temporarily seperate RIFE 4.7 and the rest
 #because styler00dollar's implementation of RIFE 4.7 (https://github.com/styler00dollar/VSGAN-tensorrt-docker/blob/main/src/rife_arch.py) doesn't work
 #the flow is broken
-from .rife_arch import IFNet
-from .rife_arch_47 import IFNet as IFNet47
 import torch
 from torch.utils.data import DataLoader
 import pathlib
@@ -77,7 +75,8 @@ class RIFE_VFI:
     
             To prevent memory overflow, it clears the CUDA cache after processing a specified number of frames.
         """
-        
+        from .rife_arch import IFNet
+        from .rife_arch_47 import IFNet as IFNet47
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         arch_ver = CKPT_NAME_VER_DICT[ckpt_name]
         interpolation_model = IFNet(arch_ver=arch_ver) if arch_ver != "4.7" else IFNet47()

@@ -1,10 +1,7 @@
 import torch
-from torch.utils.data import DataLoader
 import pathlib
 from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
-from .IFRNet_S_arch import IRFNet_S
-from .IFRNet_L_arch import IRFNet_L
 from comfy.model_management import get_torch_device
 from utils import generic_frame_loop, InterpolationStateList
 
@@ -40,6 +37,8 @@ class IFRNet_VFI:
         scale_factor: typing.SupportsFloat = 1.0,
         optional_interpolation_states: InterpolationStateList = None
     ):
+        from .IFRNet_S_arch import IRFNet_S
+        from .IFRNet_L_arch import IRFNet_L
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         interpolation_model = IRFNet_S() if 'S' in ckpt_name else IRFNet_L()
         interpolation_model.load_state_dict(torch.load(model_path))

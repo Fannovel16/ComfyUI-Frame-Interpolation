@@ -4,7 +4,6 @@ import numpy as np
 import typing
 from utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames, assert_batch_size
 import pathlib
-from .stmfnet_arch import STMFNet_Model
 import warnings
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
@@ -40,6 +39,7 @@ class STMFNet_VFI:
         duplicate_first_last_frames: bool = False,
         optional_interpolation_states: InterpolationStateList = None   
     ):
+        from .stmfnet_arch import STMFNet_Model
         if multiplier != 2:
             warnings.warn("Currently, ST-MFNet only supports 2x interpolation. The process will continue but please set multiplier=2 afterward")
 

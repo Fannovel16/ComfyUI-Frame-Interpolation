@@ -1,4 +1,3 @@
-from .IFUNet_arch import IFUNetModel
 import torch
 from torch.utils.data import DataLoader
 import pathlib
@@ -40,6 +39,7 @@ class IFUnet_VFI:
         ensemble: bool = True,
         optional_interpolation_states: InterpolationStateList = None
     ):
+        from .IFUNet_arch import IFUNetModel
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         interpolation_model = IFUNetModel()
         interpolation_model.load_state_dict(torch.load(model_path))

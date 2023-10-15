@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader
 import pathlib
 from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
-from .M2M_arch import M2M_PWC
 from comfy.model_management import get_torch_device
 from utils import InterpolationStateList, generic_frame_loop
 
@@ -39,6 +38,7 @@ class M2M_VFI:
         multiplier: typing.SupportsInt = 2,
         optional_interpolation_states: InterpolationStateList = None
     ):
+        from .M2M_arch import M2M_PWC
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         interpolation_model = M2M_PWC()
         interpolation_model.load_state_dict(torch.load(model_path))

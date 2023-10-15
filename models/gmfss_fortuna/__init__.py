@@ -4,8 +4,6 @@ import typing
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .GMFSS_Fortuna_arch import Model as GMFSS
-from .GMFSS_Fortuna_union_arch import Model as GMFSS_Union
 from comfy.model_management import get_torch_device
 
 
@@ -29,6 +27,8 @@ CKPTS_PATH_CONFIG = {
 class CommonModelInference(nn.Module):
     def __init__(self, model_type):
         super(CommonModelInference, self).__init__()
+        from .GMFSS_Fortuna_arch import Model as GMFSS
+        from .GMFSS_Fortuna_union_arch import Model as GMFSS_Union
         self.model = GMFSS_Union() if "union" in model_type else GMFSS()
         self.model.eval()
         self.model.device()

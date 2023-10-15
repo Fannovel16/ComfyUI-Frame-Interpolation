@@ -3,7 +3,6 @@ from utils import load_file_from_github_release, preprocess_frames, postprocess_
 import typing
 import torch
 import torch.nn as nn
-from .eisai_arch import SoftsplatLite, DTM, RAFT
 from comfy.model_management import soft_empty_cache, get_torch_device
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
@@ -15,6 +14,7 @@ MODEL_FILE_NAMES = {
 
 class EISAI(nn.Module):
     def __init__(self, model_file_names) -> None:
+        from .eisai_arch import SoftsplatLite, DTM, RAFT
         super(EISAI, self).__init__()
         self.raft = RAFT(load_file_from_github_release(MODEL_TYPE, model_file_names["raft"]))
         self.raft.to(get_torch_device()).eval()

@@ -1,4 +1,3 @@
-from .xvfi_arch import XVFInet, weights_init
 import argparse
 import torch
 import torch.nn as nn
@@ -6,7 +5,7 @@ import torch.nn.functional as F
 import einops
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
+from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, InterpolationStateList
 import typing
 from comfy.model_management import get_torch_device
 
@@ -26,6 +25,7 @@ CKPT_CONFIGS = {
 class XVFI_Inference(nn.Module):
     def __init__(self, model_path, model_config) -> None:
         super(XVFI_Inference, self).__init__()
+        from .xvfi_arch import XVFInet, weights_init
         model_config = model_config
         args = argparse.Namespace(
             gpu=get_torch_device(),
