@@ -178,13 +178,17 @@ def generic_frame_loop(
         number_of_frames_processed_since_last_cleared_cuda_cache += 1
         # Try to avoid a memory overflow by clearing cuda cache regularly
         if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
+            print("Comfy-VFI: Clearing cache...")
             soft_empty_cache()
             number_of_frames_processed_since_last_cleared_cuda_cache = 0
+            print("Comfy-VFI: Done cache clearing")
                 
     output_frames.append(frames[-1]) # Append final frame
     out = torch.cat(output_frames, dim=0)
     # clear cache for courtesy
+    print("Comfy-VFI: Final clearing cache...")
     soft_empty_cache()
+    print("Comfy-VFI: Done cache clearing")
     return out
 
 """ def generic_4frame_loop(

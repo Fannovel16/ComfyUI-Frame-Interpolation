@@ -90,10 +90,14 @@ class FLAVR_VFI:
 
             # Try to avoid a memory overflow by clearing cuda cache regularly
             if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
+                print("Comfy-VFI: Clearing cache...")
                 soft_empty_cache()
                 number_of_frames_processed_since_last_cleared_cuda_cache = 0
+                print("Comfy-VFI: Done cache clearing")
         
         out = torch.cat(output_frames, dim=0)
         # clear cache for courtesy
+        print("Comfy-VFI: Final clearing cache...")
         soft_empty_cache()
+        print("Comfy-VFI: Done cache clearing")
         return (postprocess_frames(out), )
