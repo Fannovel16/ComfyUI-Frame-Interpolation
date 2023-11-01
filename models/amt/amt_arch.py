@@ -199,17 +199,11 @@ class InputPadder:
         pad_wd = (((self.wd // divisor) + 1) * divisor - self.wd) % divisor
         self._pad = [pad_wd//2, pad_wd - pad_wd//2, pad_ht//2, pad_ht - pad_ht//2]
 
-    def pad(self, *inputs):
-        if len(inputs) == 1:
-            return F.pad(inputs[0], self._pad, mode='replicate')
-        else:
-            return [F.pad(x, self._pad, mode='replicate') for x in inputs]
+    def pad(self, input_tensor):
+        return F.pad(input_tensor, self._pad, mode='replicate')
 
-    def unpad(self, *inputs):
-        if len(inputs) == 1:
-            return self._unpad(inputs[0])
-        else:
-            return [self._unpad(x) for x in inputs]
+    def unpad(self, input_tensor):
+        return self._unpad(input_tensor)
     
     def _unpad(self, x):
         ht, wd = x.shape[-2:]

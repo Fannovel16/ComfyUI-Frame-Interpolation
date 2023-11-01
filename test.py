@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 import PIL
 import torchvision.transforms.functional as transform
-from utils import load_file_from_github_release
+from vfi_utils import load_file_from_github_release
 from models import gmfss_fortuna, ifrnet, ifunet, m2m, rife, sepconv, amt, xvfi, cain, flavr
 import numpy as np
 

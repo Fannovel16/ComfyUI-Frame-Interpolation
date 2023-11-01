@@ -3,11 +3,11 @@ from comfy.model_management import get_torch_device, soft_empty_cache
 import bisect
 import numpy as np
 import typing
-from utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames
+from vfi_utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames
 import pathlib
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
-device = get_torch_device()
+DEVICE = get_torch_device()
 def inference(model, img_batch_1, img_batch_2, inter_frames):
     results = [
         img_batch_1,
@@ -27,8 +27,8 @@ def inference(model, img_batch_1, img_batch_2, inter_frames):
         start_i, step = np.unravel_index(matrix, distances.shape)
         end_i = start_i + 1
 
-        x0 = results[start_i].to(device)
-        x1 = results[end_i].to(device)
+        x0 = results[start_i].to(DEVICE)
+        x1 = results[end_i].to(DEVICE)
         dt = x0.new_full((1, 1), (splits[remains[step]] - splits[idxes[start_i]])) / (splits[idxes[end_i]] - splits[idxes[start_i]])
 
         with torch.no_grad():
@@ -71,20 +71,18 @@ class FILM_VFI:
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         model = torch.jit.load(model_path, map_location='cpu')
         model.eval()
-        model = model.to(device)
+        model = model.to(DEVICE)
 
-        frames = preprocess_frames(frames, device)
-        # Ensure proper tensor dimensions
-        frames = [frame.unsqueeze(0) for frame in frames]
-
+        frames = preprocess_frames(frames)
         number_of_frames_processed_since_last_cleared_cuda_cache = 0
         output_frames = []
         for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
             if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
                 continue
-            
-            relust = inference(model, frames[frame_itr], frames[frame_itr + 1], multiplier - 1)
-            output_frames.extend(relust[:-1])
+            frame_0 = frames[frame_itr:frame_itr+1].to(DEVICE)
+            frame_1 = frames[frame_itr+1:frame_itr+2].to(DEVICE)
+            relust = inference(model, frame_0, frame_1, multiplier - 1)
+            output_frames.extend([frame.detach().cpu() for frame in relust[:-1]])
 
             number_of_frames_processed_since_last_cleared_cuda_cache += 1
             # Try to avoid a memory overflow by clearing cuda cache regularly
@@ -94,7 +92,7 @@ class FILM_VFI:
                 number_of_frames_processed_since_last_cleared_cuda_cache = 0
                 print("Comfy-VFI: Done cache clearing")
         
-        output_frames.append(frames[-1]) # Append final frame
+        output_frames.append(frames[-1:]) # Append final frame
         out = torch.cat(output_frames, dim=0)
         # clear cache for courtesy
         print("Comfy-VFI: Final clearing cache...")

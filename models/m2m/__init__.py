@@ -2,10 +2,10 @@ import pathlib
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release, preprocess_frames, postprocess_frames
+from vfi_utils import load_file_from_github_release, preprocess_frames, postprocess_frames
 import typing
 from comfy.model_management import get_torch_device
-from utils import InterpolationStateList, generic_frame_loop
+from vfi_utils import InterpolationStateList, generic_frame_loop
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
 CKPT_NAMES = ["M2M.pth"]
@@ -44,9 +44,7 @@ class M2M_VFI:
         interpolation_model.load_state_dict(torch.load(model_path))
         interpolation_model.eval().to(get_torch_device())
 
-        frames = preprocess_frames(frames, get_torch_device())
-        # Ensure proper tensor dimensions
-        frames = [frame.unsqueeze(0) for frame in frames]
+        frames = preprocess_frames(frames)
         
         def return_middle_frame(frame_0, frame_1, int_timestep, model):
             tenSteps = [

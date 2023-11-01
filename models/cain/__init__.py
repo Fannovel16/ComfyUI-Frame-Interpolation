@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
+from vfi_utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
 from comfy.model_management import get_torch_device
 
@@ -48,10 +48,8 @@ class CAIN_VFI:
         interpolation_model.eval().to(get_torch_device())
         del sd
 
-        frames = preprocess_frames(frames, get_torch_device())
-        
-        # Ensure proper tensor dimensions
-        frames = [frame.unsqueeze(0) for frame in frames]
+        frames = preprocess_frames(frames)
+    
         
         def return_middle_frame(frame_0, frame_1, timestep, model):
             #CAIN does some direct modifications to input frame tensors so we need to clone them

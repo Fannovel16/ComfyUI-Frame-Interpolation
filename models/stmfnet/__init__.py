@@ -2,7 +2,7 @@ import torch
 from comfy.model_management import get_torch_device, soft_empty_cache
 import numpy as np
 import typing
-from utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames, assert_batch_size
+from vfi_utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames, assert_batch_size
 import pathlib
 import warnings
 
@@ -50,10 +50,7 @@ class STMFNet_VFI:
         model.load_state_dict(torch.load(model_path))
         model = model.eval().to(device)
 
-        frames = preprocess_frames(frames, device)
-        # Ensure proper tensor dimensions
-        frames = [frame.unsqueeze(0) for frame in frames]
-
+        frames = preprocess_frames(frames)
         number_of_frames_processed_since_last_cleared_cuda_cache = 0
         output_frames = []
         for frame_itr in range(len(frames) - 3):
@@ -61,8 +58,13 @@ class STMFNet_VFI:
             if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr) and interpolation_states.is_frame_skipped(frame_itr + 1):
                 continue
             
-            frame0, frame1, frame2, frame3 = frames[frame_itr], frames[frame_itr + 1], frames[frame_itr + 2], frames[frame_itr + 3]
-            new_frame = model(frame0, frame1, frame2, frame3)
+            frame0, frame1, frame2, frame3 = (
+                frames[frame_itr:frame_itr+1],
+                frames[frame_itr+1:frame_itr+2], 
+                frames[frame_itr+2:frame_itr+3], 
+                frames[frame_itr+3:frame_itr+4]
+            )
+            new_frame = model(frame0.to(device), frame1.to(device), frame2.to(device), frame3.to(device)).detach().cpu()
             number_of_frames_processed_since_last_cleared_cuda_cache += 2
             
             if frame_itr == 0:

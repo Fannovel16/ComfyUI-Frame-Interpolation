@@ -2,7 +2,7 @@ import pathlib
 import torch
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_direct_url, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
+from vfi_utils import load_file_from_direct_url, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
 from comfy.model_management import get_torch_device
 from .amt_arch import AMT_S, AMT_L, AMT_G, InputPadder
@@ -65,9 +65,9 @@ class AMT_VFI:
         interpolation_model.load_state_dict(torch.load(model_path)["state_dict"])
         interpolation_model.eval().to(get_torch_device())
 
-        frames = preprocess_frames(frames, get_torch_device())
-        padder = InputPadder(frames[0].shape, 16)
-        frames = padder.pad(*[frame.unsqueeze(0) for frame in frames])
+        frames = preprocess_frames(frames)
+        padder = InputPadder(frames.shape, 16)
+        frames = padder.pad(frames)
         
         def return_middle_frame(frame_0, frame_1, timestep, model):
             return model(
@@ -79,9 +79,9 @@ class AMT_VFI:
             )["imgt_pred"]
         
         args = [interpolation_model]
-        out = postprocess_frames(
-            generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
+        out = generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
                                interpolation_states=optional_interpolation_states)
-        )
+        out = padder.unpad(out)
+        out = postprocess_frames(out)
         return (out,)
 

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import einops
 from torch.utils.data import DataLoader
 import pathlib
-from utils import load_file_from_github_release, preprocess_frames, postprocess_frames, InterpolationStateList
+from vfi_utils import load_file_from_github_release, preprocess_frames, postprocess_frames, InterpolationStateList
 import typing
 from comfy.model_management import get_torch_device
 
@@ -79,7 +79,7 @@ class XVFI:
         global model
         model = XVFI_Inference(model_path, ckpt_config)
 
-        frames = preprocess_frames(frames, get_torch_device())
+        frames = preprocess_frames(frames)
         #https://github.com/JihyongOh/XVFI/blob/main/main.py#L314
         divide = 2 ** (ckpt_config["S_tst"]) * ckpt_config["module_scale_factor"] * 4
         B, C, H, W = frames.size()

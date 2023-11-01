@@ -2,15 +2,15 @@ import torch
 from comfy.model_management import get_torch_device, soft_empty_cache
 import numpy as np
 import typing
-from utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames, assert_batch_size
+from vfi_utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames, assert_batch_size
 import pathlib
 import warnings
+from .flavr_arch import UNet_3D_3D, InputPadder
 
 device = get_torch_device()
 NBR_FRAME = 4
 
 def build_flavr(model_path):
-    from .flavr_arch import UNet_3D_3D
     sd = torch.load(model_path)['state_dict']
     sd = {k.partition("module.")[-1]:v for k,v in sd.items()}
 
@@ -61,9 +61,9 @@ class FLAVR_VFI:
         interpolation_states = optional_interpolation_states
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         model = build_flavr(model_path)
-        frames = preprocess_frames(frames, device)
-        # Ensure proper tensor dimensions
-        frames = [frame.unsqueeze(0) for frame in frames]
+        frames = preprocess_frames(frames)
+        padder = InputPadder(frames.shape, 16)
+        frames = padder.pad(frames)
 
         number_of_frames_processed_since_last_cleared_cuda_cache = 0
         output_frames = []
@@ -72,8 +72,13 @@ class FLAVR_VFI:
             if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr) and interpolation_states.is_frame_skipped(frame_itr + 1):
                 continue
             
-            frame0, frame1, frame2, frame3 = frames[frame_itr], frames[frame_itr + 1], frames[frame_itr + 2], frames[frame_itr + 3]
-            new_frame = model([frame0, frame1, frame2, frame3])[0]
+            frame0, frame1, frame2, frame3 = (
+                frames[frame_itr:frame_itr+1],
+                frames[frame_itr+1:frame_itr+2], 
+                frames[frame_itr+2:frame_itr+3], 
+                frames[frame_itr+3:frame_itr+4]
+            )
+            new_frame = model([frame0.to(device), frame1.to(device), frame2.to(device), frame3.to(device)])[0].detach().cpu()
             number_of_frames_processed_since_last_cleared_cuda_cache += 2
             
             if frame_itr == 0:
@@ -96,6 +101,7 @@ class FLAVR_VFI:
                 print("Comfy-VFI: Done cache clearing")
         
         out = torch.cat(output_frames, dim=0)
+        out = padder.unpad(out)
         # clear cache for courtesy
         print("Comfy-VFI: Final clearing cache...")
         soft_empty_cache()

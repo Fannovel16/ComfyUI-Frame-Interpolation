@@ -21,7 +21,7 @@ if os.path.exists(config_path):
     config = yaml.load(open(config_path, "r"), Loader=yaml.FullLoader)
 else:
     raise Exception("config.yaml file is neccessary, plz recreate the config file by downloading it from https://github.com/Fannovel16/ComfyUI-Frame-Interpolation")
-
+DEVICE = get_torch_device()
 
 class InterpolationStateList():
 
@@ -110,8 +110,8 @@ def load_file_from_github_release(model_type, ckpt_name):
 def load_file_from_direct_url(model_type, url):
     return load_file_from_url(url, get_ckpt_container_path(model_type))
 
-def preprocess_frames(frames, device):
-    return einops.rearrange(frames.to(device), "n h w c -> n c h w")
+def preprocess_frames(frames):
+    return einops.rearrange(frames, "n h w c -> n c h w")
 
 def postprocess_frames(frames):
     return einops.rearrange(frames, "n c h w -> n h w c").cpu()
@@ -148,32 +148,33 @@ def generic_frame_loop(
     
     for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
        
-        frame_0 = frames[frame_itr]
+        frame_0 = frames[frame_itr:frame_itr+1]
+        frame_1 = frames[frame_itr+1:frame_itr+2]
         output_frames.append(frame_0) # Start with first frame
         
         if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
             continue
     
         # Generate and append a batch of middle frames
-        middle_frames_batch = []
+        middle_frame_batches = []
 
         if use_timestep:
             for middle_i in range(1, multiplier):
                 timestep = middle_i/multiplier
                 
                 middle_frame = return_middle_frame_function(
-                    frame_0, 
-                    frames[frame_itr + 1],
+                    frame_0.to(DEVICE), 
+                    frame_1.to(DEVICE),
                     timestep,
                     *return_middle_frame_function_args
-                )
-                middle_frames_batch.append(middle_frame)
+                ).detach().cpu()
+                middle_frame_batches.append(middle_frame)
         else:
-            middle_frames = non_timestep_inference(frame_0, frames[frame_itr + 1], multiplier - 1)
-            middle_frames_batch.extend(middle_frames)
+            middle_frames = non_timestep_inference(frame_0.to(DEVICE), frame_1.to(DEVICE), multiplier - 1)
+            middle_frame_batches.extend(torch.cat(middle_frames, dim=0).detach().cpu())
         
         # Extend output array by batch
-        output_frames.extend(middle_frames_batch)
+        output_frames.extend(middle_frame_batches)
 
         number_of_frames_processed_since_last_cleared_cuda_cache += 1
         # Try to avoid a memory overflow by clearing cuda cache regularly
@@ -183,7 +184,7 @@ def generic_frame_loop(
             number_of_frames_processed_since_last_cleared_cuda_cache = 0
             print("Comfy-VFI: Done cache clearing")
                 
-    output_frames.append(frames[-1]) # Append final frame
+    output_frames.append(frames[-1:]) # Append final frame
     out = torch.cat(output_frames, dim=0)
     # clear cache for courtesy
     print("Comfy-VFI: Final clearing cache...")

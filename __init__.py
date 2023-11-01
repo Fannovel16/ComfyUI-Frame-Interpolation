@@ -17,7 +17,7 @@ from models.film import FILM_VFI
 from models.stmfnet import STMFNet_VFI
 from models.flavr import FLAVR_VFI
 from models.cain import CAIN_VFI
-from utils import MakeInterpolationStateList
+from vfi_utils import MakeInterpolationStateList
     
 NODE_CLASS_MAPPINGS = {
     "KSampler Gradually Adding More Denoise (efficient)": Gradually_More_Denoise_KSampler,
