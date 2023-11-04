@@ -11,9 +11,9 @@ import torch.nn.functional as F
 import torch.nn as nn
 import torch.optim as optim
 import warnings
+from comfy.model_management import get_torch_device
 
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = get_torch_device()
 backwarp_tenGrid = {}
 
 
@@ -102,7 +102,7 @@ def conv(
         )
 
 
-def conv_bn(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1):
+def conv_bn(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1, arch_ver="4.0"):
     if arch_ver != "4.7":
         return nn.Sequential(
             nn.Conv2d(
