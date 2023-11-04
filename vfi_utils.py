@@ -130,12 +130,12 @@ def generic_frame_loop(
         use_timestep=True):
 
     #https://github.com/hzwer/Practical-RIFE/blob/main/inference_video.py#L169
-    def non_timestep_inference(frame_0, frame_1, n):        
-        middle = return_middle_frame_function(frame_0, frame_1, None, *return_middle_frame_function_args)
+    def non_timestep_inference(frame0, frame1, n):        
+        middle = return_middle_frame_function(frame0, frame1, None, *return_middle_frame_function_args)
         if n == 1:
             return [middle]
-        first_half = non_timestep_inference(frame_0, middle, n=n//2)
-        second_half = non_timestep_inference(middle, frame_1, n=n//2)
+        first_half = non_timestep_inference(frame0, middle, n=n//2)
+        second_half = non_timestep_inference(middle, frame1, n=n//2)
         if n%2:
             return [*first_half, middle, *second_half]
         else:
@@ -148,9 +148,9 @@ def generic_frame_loop(
     
     for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
        
-        frame_0 = frames[frame_itr:frame_itr+1]
-        frame_1 = frames[frame_itr+1:frame_itr+2]
-        output_frames.append(frame_0) # Start with first frame
+        frame0 = frames[frame_itr:frame_itr+1]
+        frame1 = frames[frame_itr+1:frame_itr+2]
+        output_frames.append(frame0) # Start with first frame
         
         if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
             continue
@@ -163,14 +163,14 @@ def generic_frame_loop(
                 timestep = middle_i/multiplier
                 
                 middle_frame = return_middle_frame_function(
-                    frame_0.to(DEVICE), 
-                    frame_1.to(DEVICE),
+                    frame0.to(DEVICE), 
+                    frame1.to(DEVICE),
                     timestep,
                     *return_middle_frame_function_args
                 ).detach().cpu()
                 middle_frame_batches.append(middle_frame)
         else:
-            middle_frames = non_timestep_inference(frame_0.to(DEVICE), frame_1.to(DEVICE), multiplier - 1)
+            middle_frames = non_timestep_inference(frame0.to(DEVICE), frame1.to(DEVICE), multiplier - 1)
             middle_frame_batches.extend(torch.cat(middle_frames, dim=0).detach().cpu())
         
         # Extend output array by batch
