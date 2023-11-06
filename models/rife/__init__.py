@@ -1,6 +1,3 @@
-#Temporarily seperate RIFE 4.7 and the rest
-#because styler00dollar's implementation of RIFE 4.7 (https://github.com/styler00dollar/VSGAN-tensorrt-docker/blob/main/src/rife_arch.py) doesn't work
-#the flow is broken
 import torch
 from torch.utils.data import DataLoader
 import pathlib
