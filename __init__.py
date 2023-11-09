@@ -5,18 +5,18 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from .other_nodes import Gradually_More_Denoise_KSampler
 
 #Some models are commented out because the code is not completed
-#from models.eisai import EISAI_VFI
-from models.gmfss_fortuna import GMFSS_Fortuna_VFI
-from models.ifrnet import IFRNet_VFI
-from models.ifunet import IFUnet_VFI
-from models.m2m import M2M_VFI
-from models.rife import RIFE_VFI
-from models.sepconv import SepconvVFI
-from models.amt import AMT_VFI
-from models.film import FILM_VFI
-from models.stmfnet import STMFNet_VFI
-from models.flavr import FLAVR_VFI
-from models.cain import CAIN_VFI
+#from vfi_models.eisai import EISAI_VFI
+from vfi_models.gmfss_fortuna import GMFSS_Fortuna_VFI
+from vfi_models.ifrnet import IFRNet_VFI
+from vfi_models.ifunet import IFUnet_VFI
+from vfi_models.m2m import M2M_VFI
+from vfi_models.rife import RIFE_VFI
+from vfi_models.sepconv import SepconvVFI
+from vfi_models.amt import AMT_VFI
+from vfi_models.film import FILM_VFI
+from vfi_models.stmfnet import STMFNet_VFI
+from vfi_models.flavr import FLAVR_VFI
+from vfi_models.cain import CAIN_VFI
 from vfi_utils import MakeInterpolationStateList
     
 NODE_CLASS_MAPPINGS = {

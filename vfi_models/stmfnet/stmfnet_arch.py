@@ -25,7 +25,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
-from models.ops import FunctionCorrelation, FunctionAdaCoF, ModuleSoftsplat
+from vfi_models.ops import FunctionCorrelation, FunctionAdaCoF, ModuleSoftsplat
 from vfi_utils import get_ckpt_container_path
 import pathlib
 MODEL_TYPE = pathlib.Path(__file__).parent.name

@@ -50,7 +50,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm.auto import tqdm as std_tqdm
 from tqdm.auto import trange as std_trange
-from models.ops import FunctionSoftsplat, batch_edt
+from vfi_models.ops import FunctionSoftsplat, batch_edt
 from comfy.model_management import get_torch_device
 
 device = get_torch_device()
