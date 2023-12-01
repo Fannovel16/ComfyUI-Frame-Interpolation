@@ -23,7 +23,7 @@ class RIFE_VFI:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "ckpt_name": (list(CKPT_NAME_VER_DICT.keys()), ),
+                "ckpt_name": (list(CKPT_NAME_VER_DICT.keys()), {"default": "rife47.pth"}),
                 "frames": ("IMAGE", ),
                 "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
                 "multiplier": ("INT", {"default": 2, "min": 1}),
