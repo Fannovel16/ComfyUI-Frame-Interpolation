@@ -36,3 +36,6 @@ NODE_CLASS_MAPPINGS = {
     "CAIN VFI": CAIN_VFI
 }
 
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "RIFE VFI": "RIFE VFI (recommend rife47 and rife49)"
+}

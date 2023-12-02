@@ -4,6 +4,8 @@ import pathlib
 from vfi_utils import load_file_from_github_release, preprocess_frames, postprocess_frames, generic_frame_loop, InterpolationStateList
 import typing
 from comfy.model_management import get_torch_device
+import re
+from functools import cmp_to_key
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
 CKPT_NAME_VER_DICT = {
@@ -15,15 +17,26 @@ CKPT_NAME_VER_DICT = {
     "rife45.pth": "4.5",
     "rife46.pth": "4.6",
     "rife47.pth": "4.7",
-    "sudo_rife4_269.662_testV1_scale1.pth": "4.0"
+    "rife48.pth": "4.7",
+    "rife49.pth": "4.7",
+    #Arch 4.10 doesn't work due to state dict mismatch
+    #TODO: Investigating and fix it
+    #"rife410.pth": "4.10",
+    #"rife411.pth": "4.10",
+    #"rife412.pth": "4.10"
 }
+ver_re = re.compile(r'\d+')
+ver_cmp_key = cmp_to_key(lambda a,b: int(ver_re.search(a)[0]) > int(ver_re.search(b)[0]))
 
 class RIFE_VFI:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
-                "ckpt_name": (list(CKPT_NAME_VER_DICT.keys()), {"default": "rife47.pth"}),
+                "ckpt_name": (
+                    sorted(list(CKPT_NAME_VER_DICT.keys()), key=ver_cmp_key),
+                    {"default": "rife47.pth"}
+                ),
                 "frames": ("IMAGE", ),
                 "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
                 "multiplier": ("INT", {"default": 2, "min": 1}),
