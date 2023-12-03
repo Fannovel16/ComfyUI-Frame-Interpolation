@@ -8,7 +8,7 @@ A custom node set for Video Frame Interpolation in ComfyUI.
 * IFRNet VFI
 * IFUnet VFI
 * M2M VFI
-* RIFE VFI (4.0 - 4.7) (Note that option `fast_mode` won't do anything from v4.5+ as `contextnet` is removed)
+* RIFE VFI (4.0 - 4.9) (Note that option `fast_mode` won't do anything from v4.5+ as `contextnet` is removed)
 * FILM VFI
 * Sepconv VFI
 * AMT VFI
