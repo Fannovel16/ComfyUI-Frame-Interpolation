@@ -8,4 +8,3 @@ Pillow
 torchvision
 tqdm
 cupy-wheel
-timm==0.6.13
