@@ -5,6 +5,7 @@ import numpy as np
 import typing
 from vfi_utils import InterpolationStateList, load_file_from_github_release, preprocess_frames, postprocess_frames
 import pathlib
+import gc
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
 DEVICE = get_torch_device()
@@ -52,6 +53,7 @@ class FILM_VFI:
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
+                "cache_in_fp16": ("BOOLEAN", {"default": True})
             }
         }
     
@@ -65,13 +67,15 @@ class FILM_VFI:
         frames: torch.Tensor,
         clear_cache_after_n_frames = 10,
         multiplier: typing.SupportsInt = 2,
-        optional_interpolation_states: InterpolationStateList = None   
+        optional_interpolation_states: InterpolationStateList = None,
+        cache_in_fp16: bool = True
     ):
         interpolation_states = optional_interpolation_states
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         model = torch.jit.load(model_path, map_location='cpu')
         model.eval()
         model = model.to(DEVICE)
+        dtype = torch.float16 if cache_in_fp16 else torch.float32
 
         frames = preprocess_frames(frames)
         number_of_frames_processed_since_last_cleared_cuda_cache = 0
@@ -82,7 +86,7 @@ class FILM_VFI:
             frame_0 = frames[frame_itr:frame_itr+1].to(DEVICE)
             frame_1 = frames[frame_itr+1:frame_itr+2].to(DEVICE)
             relust = inference(model, frame_0, frame_1, multiplier - 1)
-            output_frames.extend([frame.detach().cpu() for frame in relust[:-1]])
+            output_frames.extend([frame.detach().cpu().to(dtype=dtype) for frame in relust[:-1]])
 
             number_of_frames_processed_since_last_cleared_cuda_cache += 1
             # Try to avoid a memory overflow by clearing cuda cache regularly
@@ -91,8 +95,9 @@ class FILM_VFI:
                 soft_empty_cache()
                 number_of_frames_processed_since_last_cleared_cuda_cache = 0
                 print("Comfy-VFI: Done cache clearing")
+            gc.collect()
         
-        output_frames.append(frames[-1:]) # Append final frame
+        output_frames.append(frames[-1:].to(dtype=dtype)) # Append final frame
         out = torch.cat(output_frames, dim=0)
         # clear cache for courtesy
         print("Comfy-VFI: Final clearing cache...")

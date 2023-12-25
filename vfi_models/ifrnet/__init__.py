@@ -21,6 +21,7 @@ class IFRNet_VFI:
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
+                "cache_in_fp16": ("BOOLEAN", {"default": True})
             }
         }
     
@@ -35,7 +36,8 @@ class IFRNet_VFI:
         clear_cache_after_n_frames: typing.SupportsInt = 1,
         multiplier: typing.SupportsInt = 2,
         scale_factor: typing.SupportsFloat = 1.0,
-        optional_interpolation_states: InterpolationStateList = None
+        optional_interpolation_states: InterpolationStateList = None,
+        cache_in_fp16: bool = True
     ):
         from .IFRNet_S_arch import IRFNet_S
         from .IFRNet_L_arch import IRFNet_L
@@ -43,9 +45,7 @@ class IFRNet_VFI:
         interpolation_model = IRFNet_S() if 'S' in ckpt_name else IRFNet_L()
         interpolation_model.load_state_dict(torch.load(model_path))
         interpolation_model.eval().to(get_torch_device())
-
         frames = preprocess_frames(frames)
-
         
         def return_middle_frame(frame_0, frame_1, timestep, model, scale_factor):
             return model(frame_0, frame_1, timestep, scale_factor)
@@ -53,6 +53,6 @@ class IFRNet_VFI:
         args = [interpolation_model, scale_factor]
         out = postprocess_frames(
             generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
-                               interpolation_states=optional_interpolation_states)
+                               interpolation_states=optional_interpolation_states, dtype=torch.float16 if cache_in_fp16 else torch.float32)
         )
         return (out,)
