@@ -61,11 +61,12 @@ class STMFNet_VFI:
             if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr) and interpolation_states.is_frame_skipped(frame_itr + 1):
                 continue
             
+            #Ensure that input frames are in fp32 - the same dtype as model
             frame0, frame1, frame2, frame3 = (
-                frames[frame_itr:frame_itr+1],
-                frames[frame_itr+1:frame_itr+2], 
-                frames[frame_itr+2:frame_itr+3], 
-                frames[frame_itr+3:frame_itr+4]
+                frames[frame_itr:frame_itr+1].float(),
+                frames[frame_itr+1:frame_itr+2].float(), 
+                frames[frame_itr+2:frame_itr+3].float(), 
+                frames[frame_itr+3:frame_itr+4].float()
             )
             new_frame = model(frame0.to(device), frame1.to(device), frame2.to(device), frame3.to(device)).detach().cpu()
             number_of_frames_processed_since_last_cleared_cuda_cache += 2
