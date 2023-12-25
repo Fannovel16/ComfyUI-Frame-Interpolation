@@ -83,8 +83,9 @@ class FILM_VFI:
         for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
             if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
                 continue
-            frame_0 = frames[frame_itr:frame_itr+1].to(DEVICE)
-            frame_1 = frames[frame_itr+1:frame_itr+2].to(DEVICE)
+            #Ensure that input frames are in fp32 - the same dtype as model
+            frame_0 = frames[frame_itr:frame_itr+1].to(DEVICE).float()
+            frame_1 = frames[frame_itr+1:frame_itr+2].to(DEVICE).float()
             relust = inference(model, frame_0, frame_1, multiplier - 1)
             output_frames.extend([frame.detach().cpu().to(dtype=dtype) for frame in relust[:-1]])
 

@@ -149,9 +149,9 @@ def generic_frame_loop(
     number_of_frames_processed_since_last_cleared_cuda_cache = 0
     
     for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
-       
-        frame0 = frames[frame_itr:frame_itr+1]
-        frame1 = frames[frame_itr+1:frame_itr+2]
+        #Ensure that input frames are in fp32 - the same dtype as model
+        frame0 = frames[frame_itr:frame_itr+1].float()
+        frame1 = frames[frame_itr+1:frame_itr+2].float()
         output_frames.append(frame0.to(dtype=dtype)) # Start with first frame
         
         if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
