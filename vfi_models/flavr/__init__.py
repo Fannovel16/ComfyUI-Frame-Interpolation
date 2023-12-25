@@ -6,6 +6,7 @@ from vfi_utils import InterpolationStateList, load_file_from_github_release, pre
 import pathlib
 import warnings
 from .flavr_arch import UNet_3D_3D, InputPadder
+import gc
 
 device = get_torch_device()
 NBR_FRAME = 4
@@ -37,6 +38,7 @@ class FLAVR_VFI:
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
+                "cache_in_fp16": ("BOOLEAN", {"default": True})
             }
         }
     
@@ -52,7 +54,8 @@ class FLAVR_VFI:
         clear_cache_after_n_frames = 10,
         multiplier: typing.SupportsInt = 2,
         duplicate_first_last_frames: bool = False,
-        optional_interpolation_states: InterpolationStateList = None   
+        optional_interpolation_states: InterpolationStateList = None,
+        cache_in_fp16: bool = True
     ):
         if multiplier != 2:
             warnings.warn("Currently, FLAVR only supports 2x interpolation. The process will continue but please set multiplier=2 afterward")
@@ -72,11 +75,12 @@ class FLAVR_VFI:
             if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr) and interpolation_states.is_frame_skipped(frame_itr + 1):
                 continue
             
+            #Ensure that input frames are in fp32 - the same dtype as model
             frame0, frame1, frame2, frame3 = (
-                frames[frame_itr:frame_itr+1],
-                frames[frame_itr+1:frame_itr+2], 
-                frames[frame_itr+2:frame_itr+3], 
-                frames[frame_itr+3:frame_itr+4]
+                frames[frame_itr:frame_itr+1].float(),
+                frames[frame_itr+1:frame_itr+2].float(), 
+                frames[frame_itr+2:frame_itr+3].float(), 
+                frames[frame_itr+3:frame_itr+4].float()
             )
             new_frame = model([frame0.to(device), frame1.to(device), frame2.to(device), frame3.to(device)])[0].detach().cpu()
             number_of_frames_processed_since_last_cleared_cuda_cache += 2
@@ -95,15 +99,18 @@ class FLAVR_VFI:
 
             # Try to avoid a memory overflow by clearing cuda cache regularly
             if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
-                print("Comfy-VFI: Clearing cache...")
+                print("Comfy-VFI: Clearing cache...", end = ' ')
                 soft_empty_cache()
                 number_of_frames_processed_since_last_cleared_cuda_cache = 0
-                print("Comfy-VFI: Done cache clearing")
+                print("Done cache clearing")
+            gc.collect()
         
+        dtype = torch.float16 if cache_in_fp16 else torch.float32
+        output_frames = [frame.cpu().to(dtype=dtype) for frame in output_frames] #Ensure all frames are in cpu
         out = torch.cat(output_frames, dim=0)
         out = padder.unpad(out)
         # clear cache for courtesy
-        print("Comfy-VFI: Final clearing cache...")
+        print("Comfy-VFI: Final clearing cache...", end=' ')
         soft_empty_cache()
-        print("Comfy-VFI: Done cache clearing")
+        print("Done cache clearing")
         return (postprocess_frames(out), )

@@ -99,6 +99,7 @@ class FILM_VFI:
             gc.collect()
         
         output_frames.append(frames[-1:].to(dtype=dtype)) # Append final frame
+        output_frames = [frame.cpu() for frame in output_frames] #Ensure all frames are in cpu
         out = torch.cat(output_frames, dim=0)
         # clear cache for courtesy
         print("Comfy-VFI: Final clearing cache...")

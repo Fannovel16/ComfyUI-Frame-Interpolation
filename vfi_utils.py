@@ -193,9 +193,9 @@ def generic_frame_loop(
     output_frames = [frame.cpu() for frame in output_frames] #Ensure all frames are in cpu
     out = torch.cat(output_frames, dim=0)
     # clear cache for courtesy
-    print("Comfy-VFI: Final clearing cache...")
+    print("Comfy-VFI: Final clearing cache...", end = ' ')
     soft_empty_cache()
-    print("Comfy-VFI: Done cache clearing")
+    print("Done cache clearing")
     return out
 
 """ def generic_4frame_loop(
