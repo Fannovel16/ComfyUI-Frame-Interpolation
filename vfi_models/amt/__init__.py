@@ -28,7 +28,6 @@ CKPT_CONFIGS = {
 }
 
 
-
 MODEL_TYPE = pathlib.Path(__file__).parent.name
 
 class AMT_VFI:
@@ -43,6 +42,7 @@ class AMT_VFI:
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", ),
+                "cache_in_fp16": ("BOOLEAN", {"default": True})
             }
         }
     
@@ -56,7 +56,8 @@ class AMT_VFI:
         frames: torch.Tensor, 
         clear_cache_after_n_frames: typing.SupportsInt = 1,
         multiplier: typing.SupportsInt = 2,
-        optional_interpolation_states: InterpolationStateList = None
+        optional_interpolation_states: InterpolationStateList = None,
+        cache_in_fp16: bool = True
     ):
         model_path = load_file_from_direct_url(MODEL_TYPE, f"https://huggingface.co/lalala125/AMT/resolve/main/{ckpt_name}")
         ckpt_config = CKPT_CONFIGS[ckpt_name]
@@ -80,7 +81,7 @@ class AMT_VFI:
         
         args = [interpolation_model]
         out = generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
-                               interpolation_states=optional_interpolation_states)
+                               interpolation_states=optional_interpolation_states, dtype=torch.float16 if cache_in_fp16 else torch.float32)
         out = padder.unpad(out)
         out = postprocess_frames(out)
         return (out,)

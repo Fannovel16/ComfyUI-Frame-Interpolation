@@ -1,6 +1,7 @@
 # ComfyUI Frame Interpolation (ComfyUI VFI) (WIP)
 
 A custom node set for Video Frame Interpolation in ComfyUI.
+**UPDATE** Memory management is improved. Now this extension takes less RAM and VRAM than before.
 
 ## Nodes
 * KSampler Gradually Adding More Denoise (efficient)
