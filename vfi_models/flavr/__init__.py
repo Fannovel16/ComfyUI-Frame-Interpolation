@@ -37,8 +37,7 @@ class FLAVR_VFI:
                 "duplicate_first_last_frames": ("BOOLEAN", {"default": False})
             },
             "optional": {
-                "optional_interpolation_states": ("INTERPOLATION_STATES", ),
-                "cache_in_fp16": ("BOOLEAN", {"default": True})
+                "optional_interpolation_states": ("INTERPOLATION_STATES", )
             }
         }
     
@@ -55,7 +54,7 @@ class FLAVR_VFI:
         multiplier: typing.SupportsInt = 2,
         duplicate_first_last_frames: bool = False,
         optional_interpolation_states: InterpolationStateList = None,
-        cache_in_fp16: bool = True
+        **kwargs
     ):
         if multiplier != 2:
             warnings.warn("Currently, FLAVR only supports 2x interpolation. The process will continue but please set multiplier=2 afterward")
@@ -105,7 +104,7 @@ class FLAVR_VFI:
                 print("Done cache clearing")
             gc.collect()
         
-        dtype = torch.float16 if cache_in_fp16 else torch.float32
+        dtype = torch.float32
         output_frames = [frame.cpu().to(dtype=dtype) for frame in output_frames] #Ensure all frames are in cpu
         out = torch.cat(output_frames, dim=0)
         out = padder.unpad(out)

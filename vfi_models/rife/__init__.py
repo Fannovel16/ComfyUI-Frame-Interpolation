@@ -45,8 +45,7 @@ class RIFE_VFI:
                 "scale_factor": ([0.25, 0.5, 1.0, 2.0, 4.0], {"default": 1.0})
             },
             "optional": {
-                "optional_interpolation_states": ("INTERPOLATION_STATES", ),
-                "cache_in_fp16": ("BOOLEAN", {"default": True})
+                "optional_interpolation_states": ("INTERPOLATION_STATES", )
             }
         }
     
@@ -64,7 +63,7 @@ class RIFE_VFI:
         ensemble = False,
         scale_factor = 1.0,
         optional_interpolation_states: InterpolationStateList = None,
-        cache_in_fp16: bool = True
+        **kwargs
     ):
         """
         Perform video frame interpolation using a given checkpoint model.
@@ -103,6 +102,6 @@ class RIFE_VFI:
         args = [interpolation_model, scale_list, fast_mode, ensemble]
         out = postprocess_frames(
             generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
-                               interpolation_states=optional_interpolation_states, dtype=torch.float16 if cache_in_fp16 else torch.float32)
+                               interpolation_states=optional_interpolation_states, dtype=torch.float32)
         )
         return (out,)

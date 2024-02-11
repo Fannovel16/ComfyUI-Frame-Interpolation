@@ -52,8 +52,7 @@ class FILM_VFI:
                 "multiplier": ("INT", {"default": 2, "min": 2, "max": 1000}),
             },
             "optional": {
-                "optional_interpolation_states": ("INTERPOLATION_STATES", ),
-                "cache_in_fp16": ("BOOLEAN", {"default": True})
+                "optional_interpolation_states": ("INTERPOLATION_STATES", )
             }
         }
     
@@ -68,14 +67,14 @@ class FILM_VFI:
         clear_cache_after_n_frames = 10,
         multiplier: typing.SupportsInt = 2,
         optional_interpolation_states: InterpolationStateList = None,
-        cache_in_fp16: bool = True
+        **kwargs
     ):
         interpolation_states = optional_interpolation_states
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         model = torch.jit.load(model_path, map_location='cpu')
         model.eval()
         model = model.to(DEVICE)
-        dtype = torch.float16 if cache_in_fp16 else torch.float32
+        dtype = torch.float32
 
         frames = preprocess_frames(frames)
         number_of_frames_processed_since_last_cleared_cuda_cache = 0

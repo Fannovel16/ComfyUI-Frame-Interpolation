@@ -20,8 +20,7 @@ class IFRNet_VFI:
                 "scale_factor": ([0.25, 0.5, 1.0, 2.0, 4.0], {"default": 1.0}),
             },
             "optional": {
-                "optional_interpolation_states": ("INTERPOLATION_STATES", ),
-                "cache_in_fp16": ("BOOLEAN", {"default": True})
+                "optional_interpolation_states": ("INTERPOLATION_STATES", )
             }
         }
     
@@ -37,7 +36,7 @@ class IFRNet_VFI:
         multiplier: typing.SupportsInt = 2,
         scale_factor: typing.SupportsFloat = 1.0,
         optional_interpolation_states: InterpolationStateList = None,
-        cache_in_fp16: bool = True
+        **kwargs
     ):
         from .IFRNet_S_arch import IRFNet_S
         from .IFRNet_L_arch import IRFNet_L
@@ -53,6 +52,6 @@ class IFRNet_VFI:
         args = [interpolation_model, scale_factor]
         out = postprocess_frames(
             generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
-                               interpolation_states=optional_interpolation_states, dtype=torch.float16 if cache_in_fp16 else torch.float32)
+                               interpolation_states=optional_interpolation_states, dtype=torch.float32)
         )
         return (out,)

@@ -22,8 +22,7 @@ class STMFNet_VFI:
                 "duplicate_first_last_frames": ("BOOLEAN", {"default": False})
             },
             "optional": {
-                "optional_interpolation_states": ("INTERPOLATION_STATES", ),
-                "cache_in_fp16": ("BOOLEAN", {"default": True})
+                "optional_interpolation_states": ("INTERPOLATION_STATES", )
             }
         }
     
@@ -40,7 +39,7 @@ class STMFNet_VFI:
         multiplier: typing.SupportsInt = 2,
         duplicate_first_last_frames: bool = False,
         optional_interpolation_states: InterpolationStateList = None,
-        cache_in_fp16: bool = True
+        **kwargs
     ):
         from .stmfnet_arch import STMFNet_Model
         if multiplier != 2:
@@ -91,7 +90,7 @@ class STMFNet_VFI:
                 print("Comfy-VFI: Done cache clearing")
             gc.collect()
         
-        dtype = torch.float16 if cache_in_fp16 else torch.float32
+        dtype = torch.float32
         output_frames = [frame.cpu().to(dtype=dtype) for frame in output_frames] #Ensure all frames are in cpu
         out = torch.cat(output_frames, dim=0)
         # clear cache for courtesy
