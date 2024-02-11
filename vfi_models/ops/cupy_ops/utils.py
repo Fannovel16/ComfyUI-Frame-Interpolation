@@ -217,8 +217,6 @@ def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict, **r
 def get_cuda_home_path():
     if "CUDA_HOME" in os.environ:
         return os.environ["CUDA_HOME"]
-    if platform.system() == "Windows":
-        return str(Path(__file__).parent.parent.parent.parent / "nvrtc_dlls") #https://github.com/cupy/cupy/issues/7776
     import torch
     torch_lib_path = Path(torch.__file__).parent / "lib"
     torch_lib_path = str(torch_lib_path.resolve())
