@@ -144,15 +144,18 @@ def generic_frame_loop(
             return [*first_half, *second_half]
 
     assert_batch_size(frames) # Too lazy to include model name lol
-    output_frames = []  # List to store processed frames in the correct order
+    output_frames = torch.zeros(multiplier*frames.shape[0], *frames.shape[1:], dtype=dtype, device="cpu")
+    out_len = 0
 
     number_of_frames_processed_since_last_cleared_cuda_cache = 0
     
     for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
-        #Ensure that input frames are in fp32 - the same dtype as model
-        frame0 = frames[frame_itr:frame_itr+1].float()
-        frame1 = frames[frame_itr+1:frame_itr+2].float()
-        output_frames.append(frame0.to(dtype=dtype)) # Start with first frame
+        frame0 = frames[frame_itr:frame_itr+1]
+        output_frames[out_len] = frame0 # Start with first frame
+        out_len += 1
+        # Ensure that input frames are in fp32 - the same dtype as model
+        frame0 = frame0.to(dtype=torch.float32)
+        frame1 = frames[frame_itr+1:frame_itr+2].to(dtype=torch.float32)
         
         if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
             continue
@@ -175,8 +178,10 @@ def generic_frame_loop(
             middle_frames = non_timestep_inference(frame0.to(DEVICE), frame1.to(DEVICE), multiplier - 1)
             middle_frame_batches.extend(torch.cat(middle_frames, dim=0).detach().cpu().to(dtype=dtype))
         
-        # Extend output array by batch
-        output_frames.extend(middle_frame_batches)
+        # Copy middle frames to output
+        for middle_frame in middle_frame_batches:
+            output_frames[out_len] = middle_frame
+            out_len += 1
 
         number_of_frames_processed_since_last_cleared_cuda_cache += 1
         # Try to avoid a memory overflow by clearing cuda cache regularly
@@ -189,14 +194,14 @@ def generic_frame_loop(
         gc.collect()
     
     print(f"Comfy-VFI done! {len(output_frames)} frames generated at resolution: {output_frames[0].shape}")
-    output_frames.append(frames[-1:].to(dtype=dtype)) # Append final frame
-    output_frames = [frame.cpu() for frame in output_frames] #Ensure all frames are in cpu
-    out = torch.cat(output_frames, dim=0)
+    # Append final frame
+    output_frames[out_len] = frames[-1:]
+    out_len += 1
     # clear cache for courtesy
     print("Comfy-VFI: Final clearing cache...", end = ' ')
     soft_empty_cache()
     print("Done cache clearing")
-    return out
+    return output_frames[:out_len]
 
 """ def generic_4frame_loop(
         frames,
