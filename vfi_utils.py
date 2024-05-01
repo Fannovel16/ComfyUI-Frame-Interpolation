@@ -112,10 +112,10 @@ def load_file_from_direct_url(model_type, url):
     return load_file_from_url(url, get_ckpt_container_path(model_type))
 
 def preprocess_frames(frames):
-    return einops.rearrange(frames, "n h w c -> n c h w")
+    return einops.rearrange(frames[..., :3], "n h w c -> n c h w")
 
 def postprocess_frames(frames):
-    return einops.rearrange(frames, "n c h w -> n h w c").cpu()
+    return einops.rearrange(frames, "n c h w -> n h w c")[..., :3].cpu()
 
 def assert_batch_size(frames, batch_size=2, vfi_name=None):
     subject_verb = "Most VFI models require" if vfi_name is None else f"{vfi_name} VFI model requires"
