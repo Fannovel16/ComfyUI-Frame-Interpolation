@@ -137,7 +137,7 @@ class GMFSS_Fortuna_VFI:
         
         args = [interpolation_model, scale]
         out = postprocess_frames(
-            generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
+            generic_frame_loop(type(self).__name__, frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
                                interpolation_states=optional_interpolation_states, dtype=torch.float32)
         )
         return (out,)

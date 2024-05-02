@@ -79,7 +79,7 @@ class AMT_VFI:
             )["imgt_pred"]
         
         args = [interpolation_model]
-        out = generic_frame_loop(frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
+        out = generic_frame_loop(type(self).__name__, frames, clear_cache_after_n_frames, multiplier, return_middle_frame, *args, 
                                interpolation_states=optional_interpolation_states, dtype=torch.float32)
         out = padder.unpad(out)
         out = postprocess_frames(out)

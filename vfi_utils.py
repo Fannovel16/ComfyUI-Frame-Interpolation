@@ -118,7 +118,7 @@ def postprocess_frames(frames):
     return einops.rearrange(frames, "n c h w -> n h w c")[..., :3].cpu()
 
 def assert_batch_size(frames, batch_size=2, vfi_name=None):
-    subject_verb = "Most VFI models require" if vfi_name is None else f"{vfi_name} VFI model requires"
+    subject_verb = "Most VFI models require" if vfi_name is None else f"VFI model {vfi_name} requires"
     assert len(frames) >= batch_size, f"{subject_verb} at least {batch_size} frames to work with, only found {frames.shape[0]}. Please check the frame input using PreviewImage."
 
 def _generic_frame_loop(
@@ -129,7 +129,8 @@ def _generic_frame_loop(
         *return_middle_frame_function_args,
         interpolation_states: InterpolationStateList = None,
         use_timestep=True,
-        dtype=torch.float16):
+        dtype=torch.float16,
+        final_logging=True):
     
     #https://github.com/hzwer/Practical-RIFE/blob/main/inference_video.py#L169
     def non_timestep_inference(frame0, frame1, n):        
@@ -192,17 +193,21 @@ def _generic_frame_loop(
         
         gc.collect()
     
-    print(f"Comfy-VFI done! {len(output_frames)} frames generated at resolution: {output_frames[0].shape}")
+    if final_logging:
+        print(f"Comfy-VFI done! {len(output_frames)} frames generated at resolution: {output_frames[0].shape}")
     # Append final frame
     output_frames[out_len] = frames[-1:]
     out_len += 1
     # clear cache for courtesy
-    print("Comfy-VFI: Final clearing cache...", end = ' ')
+    if final_logging:
+        print("Comfy-VFI: Final clearing cache...", end = ' ')
     soft_empty_cache()
-    print("Done cache clearing")
+    if final_logging:
+        print("Done cache clearing")
     return output_frames[:out_len]
 
 def generic_frame_loop(
+        model_name,
         frames,
         clear_cache_after_n_frames,
         multiplier: typing.Union[typing.SupportsInt, typing.List],
@@ -212,7 +217,7 @@ def generic_frame_loop(
         use_timestep=True,
         dtype=torch.float32):
 
-    assert_batch_size(frames) # Too lazy to include model name lol
+    assert_batch_size(frames, vfi_name=model_name.replace('_', ' ').replace('VFI', ''))
     if type(multiplier) == int:
         return _generic_frame_loop(
             frames, 
@@ -239,9 +244,12 @@ def generic_frame_loop(
                 *return_middle_frame_function_args, 
                 interpolation_states=interpolation_states,
                 use_timestep=use_timestep,
-                dtype=dtype
+                dtype=dtype,
+                final_logging=False
             ))
-        return torch.cat(frame_batches)
+        output_frames = torch.cat(frame_batches)
+        print(f"Comfy-VFI done! {len(output_frames)} frames generated at resolution: {output_frames[0].shape}")
+        return output_frames
     raise NotImplementedError(f"multipiler of {type(multiplier)}")
 
 class FloatToInt:

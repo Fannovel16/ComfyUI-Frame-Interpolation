@@ -84,17 +84,17 @@ class STMFNet_VFI:
 
             # Try to avoid a memory overflow by clearing cuda cache regularly
             if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
-                print("Comfy-VFI: Clearing cache...")
+                print("Comfy-VFI: Clearing cache...", end = ' ')
                 soft_empty_cache()
                 number_of_frames_processed_since_last_cleared_cuda_cache = 0
-                print("Comfy-VFI: Done cache clearing")
+                print("Done cache clearing")
             gc.collect()
         
         dtype = torch.float32
         output_frames = [frame.cpu().to(dtype=dtype) for frame in output_frames] #Ensure all frames are in cpu
         out = torch.cat(output_frames, dim=0)
         # clear cache for courtesy
-        print("Comfy-VFI: Final clearing cache...")
+        print("Comfy-VFI: Final clearing cache...", end = ' ')
         soft_empty_cache()
-        print("Comfy-VFI: Done cache clearing")
+        print("Done cache clearing")
         return (postprocess_frames(out), )
