@@ -3,6 +3,11 @@
 A custom node set for Video Frame Interpolation in ComfyUI.
 **UPDATE** Memory management is improved. Now this extension takes less RAM and VRAM than before.
 
+**UPDATE 2** VFI nodes now accept scheduling multipiler values
+
+![](./interpolation_schedule.png)
+![](./test_vfi_schedule.gif)
+
 ## Nodes
 * KSampler Gradually Adding More Denoise (efficient)
 * GMFSS Fortuna VFI

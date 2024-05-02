@@ -17,7 +17,7 @@ from vfi_models.film import FILM_VFI
 from vfi_models.stmfnet import STMFNet_VFI
 from vfi_models.flavr import FLAVR_VFI
 from vfi_models.cain import CAIN_VFI
-from vfi_utils import MakeInterpolationStateList
+from vfi_utils import MakeInterpolationStateList, FloatToInt
     
 NODE_CLASS_MAPPINGS = {
     "KSampler Gradually Adding More Denoise (efficient)": Gradually_More_Denoise_KSampler,
@@ -33,7 +33,8 @@ NODE_CLASS_MAPPINGS = {
     "Make Interpolation State List": MakeInterpolationStateList,
     "STMFNet VFI": STMFNet_VFI,
     "FLAVR VFI": FLAVR_VFI,
-    "CAIN VFI": CAIN_VFI
+    "CAIN VFI": CAIN_VFI,
+    "VFI FloatToInt": FloatToInt
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {

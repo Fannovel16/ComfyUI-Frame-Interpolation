@@ -121,16 +121,16 @@ def assert_batch_size(frames, batch_size=2, vfi_name=None):
     subject_verb = "Most VFI models require" if vfi_name is None else f"{vfi_name} VFI model requires"
     assert len(frames) >= batch_size, f"{subject_verb} at least {batch_size} frames to work with, only found {frames.shape[0]}. Please check the frame input using PreviewImage."
 
-def generic_frame_loop(
+def _generic_frame_loop(
         frames,
         clear_cache_after_n_frames,
-        multiplier: typing.SupportsInt,
+        multiplier: typing.Union[typing.SupportsInt, typing.List],
         return_middle_frame_function,
         *return_middle_frame_function_args,
         interpolation_states: InterpolationStateList = None,
         use_timestep=True,
         dtype=torch.float16):
-
+    
     #https://github.com/hzwer/Practical-RIFE/blob/main/inference_video.py#L169
     def non_timestep_inference(frame0, frame1, n):        
         middle = return_middle_frame_function(frame0, frame1, None, *return_middle_frame_function_args)
@@ -143,7 +143,6 @@ def generic_frame_loop(
         else:
             return [*first_half, *second_half]
 
-    assert_batch_size(frames) # Too lazy to include model name lol
     output_frames = torch.zeros(multiplier*frames.shape[0], *frames.shape[1:], dtype=dtype, device="cpu")
     out_len = 0
 
@@ -202,6 +201,66 @@ def generic_frame_loop(
     soft_empty_cache()
     print("Done cache clearing")
     return output_frames[:out_len]
+
+def generic_frame_loop(
+        frames,
+        clear_cache_after_n_frames,
+        multiplier: typing.Union[typing.SupportsInt, typing.List],
+        return_middle_frame_function,
+        *return_middle_frame_function_args,
+        interpolation_states: InterpolationStateList = None,
+        use_timestep=True,
+        dtype=torch.float32):
+
+    assert_batch_size(frames) # Too lazy to include model name lol
+    if type(multiplier) == int:
+        return _generic_frame_loop(
+            frames, 
+            clear_cache_after_n_frames, 
+            multiplier, 
+            return_middle_frame_function, 
+            *return_middle_frame_function_args, 
+            interpolation_states=interpolation_states,
+            use_timestep=use_timestep,
+            dtype=dtype
+        )
+    if type(multiplier) == list:
+        multipliers = list(map(int, multiplier))
+        multipliers += [2] * (len(frames) - len(multipliers) - 1)
+        frame_batches = []
+        for frame_itr in range(len(frames) - 1):
+            multiplier = multipliers[frame_itr]
+            if multiplier == 0: continue
+            frame_batches.append(_generic_frame_loop(
+                frames[frame_itr:frame_itr+2], 
+                clear_cache_after_n_frames, 
+                multiplier, 
+                return_middle_frame_function, 
+                *return_middle_frame_function_args, 
+                interpolation_states=interpolation_states,
+                use_timestep=use_timestep,
+                dtype=dtype
+            ))
+        return torch.cat(frame_batches)
+    raise NotImplementedError(f"multipiler of {type(multiplier)}")
+
+class FloatToInt:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "float": ("FLOAT", {"default": 0, 'min': 0, 'step': 0.01})
+            }
+        }
+    
+    RETURN_TYPES = ("INT",)
+    FUNCTION = "convert"
+    CATEGORY = "ComfyUI-Frame-Interpolation"
+
+    def convert(self, float):
+        if hasattr(float, "__iter__"):
+            return (list(map(int, float)),)
+        return (int(float),)
 
 """ def generic_4frame_loop(
         frames,

@@ -79,13 +79,18 @@ class FILM_VFI:
         frames = preprocess_frames(frames)
         number_of_frames_processed_since_last_cleared_cuda_cache = 0
         output_frames = []
+        if type(multiplier) == int:
+            multipliers = [multiplier] * len(frames)
+        else:
+            multipliers = list(map(int, multiplier))
+            multipliers += [2] * (len(frames) - len(multipliers) - 1)
         for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
             if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
                 continue
             #Ensure that input frames are in fp32 - the same dtype as model
             frame_0 = frames[frame_itr:frame_itr+1].to(DEVICE).float()
             frame_1 = frames[frame_itr+1:frame_itr+2].to(DEVICE).float()
-            relust = inference(model, frame_0, frame_1, multiplier - 1)
+            relust = inference(model, frame_0, frame_1, multipliers[frame_itr] - 1)
             output_frames.extend([frame.detach().cpu().to(dtype=dtype) for frame in relust[:-1]])
 
             number_of_frames_processed_since_last_cleared_cuda_cache += 1
