@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-frame-interpolation"
-description = ""
+description = "Nodes: KSampler Gradually Adding More Denoise (efficient)"
 version = "1.0.0"
 license = "LICENSE"
 
@@ -11,4 +11,3 @@ Repository = "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
 PublisherId = ""
 DisplayName = "ComfyUI-Frame-Interpolation"
 Icon = ""
-Models = [{location = "/checkpoints/model.safetensor", model_url = "https://example.com/model.zip"}]
