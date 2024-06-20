@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-frame-interpolation"
-description = "Nodes: KSampler Gradually Adding More Denoise (efficient)"
+description = "A custom node suite for Video Frame Interpolation in ComfyUI"
 version = "1.0.0"
 license = "LICENSE"
 
@@ -8,6 +8,6 @@ license = "LICENSE"
 Repository = "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "fannovel16"
 DisplayName = "ComfyUI-Frame-Interpolation"
 Icon = ""
