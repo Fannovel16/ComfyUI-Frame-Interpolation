@@ -2,7 +2,7 @@
 name = "comfyui-frame-interpolation"
 description = "A custom node suite for Video Frame Interpolation in ComfyUI"
 version = "1.0.5"
-license = "LICENSE"
+license = { file = "LICENSE" }
 
 [project.urls]
 Repository = "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
