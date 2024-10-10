@@ -56,9 +56,10 @@ def warp(tenInput, tenFlow):
     if tenInput.type() == "torch.cuda.HalfTensor":
         g = g.half()
 
-    padding_mode = 'border'
+    padding_mode = "border"
     if device.type == "mps":
-        padding_mode = 'zeros'
+        # https://github.com/pytorch/pytorch/issues/125098
+        padding_mode = "zeros"
         g = g.clamp(-1, 1)
     return torch.nn.functional.grid_sample(
         input=tenInput,
