@@ -709,8 +709,18 @@ def warp(image: torch.Tensor, flow: torch.Tensor) -> torch.Tensor:
         torch.linspace(-ls2, ls2, flow.shape[2], dtype=dtype, device=device)[None, :, None] - normalized_flow2[..., 0],
     ], dim=3)
 
-    warped = F.grid_sample(image, normalized_flow2,
-                           mode='bilinear', padding_mode='border', align_corners=False)
+    padding_mode = "border"
+    if device.type == "mps":
+        # https://github.com/pytorch/pytorch/issues/125098
+        padding_mode = "zeros"
+        normalized_flow2 = normalized_flow2.clamp(-1, 1)
+    warped = F.grid_sample(
+        input=image,
+        grid=normalized_flow2,
+        mode='bilinear',
+        padding_mode=padding_mode,
+        align_corners=False,
+    )
     return warped.reshape(image.shape)
 
 
