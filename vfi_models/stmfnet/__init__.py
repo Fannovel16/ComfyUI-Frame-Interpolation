@@ -49,7 +49,7 @@ class STMFNet_VFI:
         interpolation_states = optional_interpolation_states
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         model = STMFNet_Model()
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path)['state_dict'])
         model = model.eval().to(device)
 
         frames = preprocess_frames(frames)
