@@ -11,6 +11,12 @@ import torchvision.transforms.functional as transform
 from comfy.model_management import soft_empty_cache, get_torch_device
 import numpy as np
 
+try:
+    import folder_paths
+    COMFY_FOLDER_PATHS_AVAILABLE = True
+except ImportError:
+    COMFY_FOLDER_PATHS_AVAILABLE = False
+
 BASE_MODEL_DOWNLOAD_URLS = [
     "https://github.com/styler00dollar/VSGAN-tensorrt-docker/releases/download/models/",
     "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/releases/download/models/",
@@ -60,6 +66,19 @@ class MakeInterpolationStateList:
         
         
 def get_ckpt_container_path(model_type):
+    if COMFY_FOLDER_PATHS_AVAILABLE:
+        try:
+            # Use ComfyUI's standard models/checkpoints directory
+            checkpoints_paths = folder_paths.get_folder_paths("checkpoints")
+            if checkpoints_paths:
+                # Create path: models/checkpoints/vfi_models/{model_type}
+                comfy_vfi_path = os.path.join(checkpoints_paths[0], "vfi_models", model_type)
+                os.makedirs(comfy_vfi_path, exist_ok=True)
+                return os.path.abspath(comfy_vfi_path)
+        except Exception as e:
+            print(f"ComfyUI-Frame-Interpolation: Failed to use ComfyUI folder paths ({e}), falling back to local directory")
+    
+    # Fallback to original behavior
     return os.path.abspath(os.path.join(os.path.dirname(__file__), config["ckpts_path"], model_type))
 
 def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
