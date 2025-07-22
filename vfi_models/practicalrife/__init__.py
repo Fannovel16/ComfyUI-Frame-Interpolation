@@ -117,9 +117,10 @@ class PracticalRIFE_VFI:
         # 4. Get shape from the tensor on the correct device
         num_frames, c, h, w = preprocessed_frames_device.shape
 
-        # 5. Pad frames to be divisible by 64 (required by Practical RIFE)
-        pad_h = ((h - 1) // 64 + 1) * 64
-        pad_w = ((w - 1) // 64 + 1) * 64
+        # 5. Pad frames to be divisible by --64-- seems to be 128 actually (required by Practical RIFE)
+        # TODO: this doesn't actually work and needs to be fixed
+        pad_h = ((h - 1) // 128 + 1) * 128
+        pad_w = ((w - 1) // 128 + 1) * 128
         padding = (0, pad_w - w, 0, pad_h - h)
         # Padding needs to happen on the device the tensor is on
         padded_frames = F.pad(preprocessed_frames_device, padding, mode='replicate')
