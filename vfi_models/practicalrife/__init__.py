@@ -43,7 +43,7 @@ class PracticalRIFE_VFI:
                 "frames": ("IMAGE", ),
                 "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000}),
                 "gpu_id": ("INT", {"default": 0, "min": 0, "max": 16}),
-                "multiplier": ("INT", {"default": 2, "min": 2}),
+                "multiplier": ("INT", {"default": 2, "min": 1}),
             },
             "optional": {
                 "optional_interpolation_states": ("INTERPOLATION_STATES", )
@@ -64,6 +64,9 @@ class PracticalRIFE_VFI:
         optional_interpolation_states: InterpolationStateList = None,
         **kwargs
     ):
+        if multiplier == 1:
+            return (frames,)
+
         if RIFE_Model_Class is None:
             raise ImportError("Practical RIFE Model class was not imported successfully. Cannot proceed.")
 
