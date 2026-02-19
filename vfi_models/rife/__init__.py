@@ -24,6 +24,10 @@ DTYPE_MAP = {
     "bfloat16": torch.bfloat16,
 }
 
+# Module-level model cache: avoids reloading weights on every node execution.
+# Key: (ckpt_name, dtype, torch_compile) — invalidated if any of these change.
+_model_cache: typing.Dict[typing.Tuple, torch.nn.Module] = {}
+
 
 class RIFE_VFI:
 
@@ -109,22 +113,29 @@ class RIFE_VFI:
         """
         from .rife_arch import IFNet
 
-        # Resolve checkpoint and instantiate model
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         arch_ver = CKPT_NAME_VER_DICT[ckpt_name]
         torch_dtype = DTYPE_MAP[dtype]
         device = get_torch_device()
 
-        interpolation_model = IFNet(arch_ver=arch_ver)
-        interpolation_model.load_state_dict(torch.load(model_path))
-        if torch_dtype != torch.float32:
-            interpolation_model = interpolation_model.to(torch_dtype)
-        interpolation_model.eval().to(device)
-
-        # Opt 2: torch.compile() — JIT-compiles the model for 10-30% faster inference.
-        # The first call triggers compilation (slow); all subsequent calls use the cached graph.
-        if torch_compile:
-            interpolation_model = torch.compile(interpolation_model)
+        # Cache the model by (ckpt_name, dtype, torch_compile) so repeated node
+        # executions skip the load_state_dict + device transfer entirely.
+        cache_key = (ckpt_name, dtype, torch_compile)
+        if cache_key not in _model_cache:
+            interpolation_model = IFNet(arch_ver=arch_ver)
+            interpolation_model.load_state_dict(torch.load(model_path, weights_only=False))
+            if torch_dtype != torch.float32:
+                interpolation_model = interpolation_model.to(torch_dtype)
+            interpolation_model.eval().to(device)
+            # Opt 2: torch.compile() — JIT-compiles the model for 10-30% faster inference.
+            # The first call triggers compilation (slow); all subsequent calls use the cached graph.
+            if torch_compile:
+                interpolation_model = torch.compile(interpolation_model)
+            _model_cache[cache_key] = interpolation_model
+            print(f"Comfy-VFI: Loaded and cached model {ckpt_name} ({dtype}{'+ torch.compile' if torch_compile else ''})")
+        else:
+            interpolation_model = _model_cache[cache_key]
+            print(f"Comfy-VFI: Using cached model {ckpt_name} ({dtype}{'+ torch.compile' if torch_compile else ''})")
 
         frames = preprocess_frames(frames)
 
