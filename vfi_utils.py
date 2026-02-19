@@ -21,16 +21,19 @@ BASE_MODEL_DOWNLOAD_URLS = [
 # Each entry is a list of mirrors tried in order.
 CKPT_FALLBACK_URLS = {
     "rife47.pth": [
+        "https://huggingface.co/marduk191/rife/resolve/main/rife47.pth",
         "https://huggingface.co/wavespeed/misc/resolve/main/rife/rife47.pth",
         "https://huggingface.co/MachineDelusions/RIFE/resolve/main/rife47.pth",
         "https://huggingface.co/jasonot/mycomfyui/resolve/main/rife47.pth",
     ],
     "rife49.pth": [
+        "https://huggingface.co/marduk191/rife/resolve/main/rife49.pth",
         "https://huggingface.co/hfmaster/models-moved/resolve/main/rife/rife49.pth",
         "https://huggingface.co/MachineDelusions/RIFE/resolve/main/rife49.pth",
         "https://huggingface.co/Isi99999/Frame_Interpolation_Models/resolve/main/rife49.pth",
     ],
     "sudo_rife4_269.662_testV1_scale1.pth": [
+        "https://huggingface.co/marduk191/rife/resolve/main/sudo_rife4_269.662_testV1_scale1.pth",
         "https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/sudo_rife4_269.662_testV1_scale1.pth",
         "https://huggingface.co/licyk/sd-upscaler-models/resolve/main/ESRGAN/sudo_rife4_269.662_testV1_scale1.pth",
     ],
