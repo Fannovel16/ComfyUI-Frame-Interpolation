@@ -53,8 +53,8 @@ def warp(tenInput, tenFlow):
 
     g = (backwarp_tenGrid[k] + tenFlow).permute(0, 2, 3, 1)
 
-    if tenInput.type() == "torch.cuda.HalfTensor":
-        g = g.half()
+    if g.dtype != tenInput.dtype:
+        g = g.to(tenInput.dtype)
 
     padding_mode = "border"
     if device.type == "mps":
