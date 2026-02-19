@@ -17,6 +17,25 @@ BASE_MODEL_DOWNLOAD_URLS = [
     "https://github.com/dajes/frame-interpolation-pytorch/releases/download/v1.0.0/"
 ]
 
+# Per-file fallback URLs for models no longer hosted at the base URLs above.
+# Each entry is a list of mirrors tried in order.
+CKPT_FALLBACK_URLS = {
+    "rife47.pth": [
+        "https://huggingface.co/wavespeed/misc/resolve/main/rife/rife47.pth",
+        "https://huggingface.co/MachineDelusions/RIFE/resolve/main/rife47.pth",
+        "https://huggingface.co/jasonot/mycomfyui/resolve/main/rife47.pth",
+    ],
+    "rife49.pth": [
+        "https://huggingface.co/hfmaster/models-moved/resolve/main/rife/rife49.pth",
+        "https://huggingface.co/MachineDelusions/RIFE/resolve/main/rife49.pth",
+        "https://huggingface.co/Isi99999/Frame_Interpolation_Models/resolve/main/rife49.pth",
+    ],
+    "sudo_rife4_269.662_testV1_scale1.pth": [
+        "https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/sudo_rife4_269.662_testV1_scale1.pth",
+        "https://huggingface.co/licyk/sd-upscaler-models/resolve/main/ESRGAN/sudo_rife4_269.662_testV1_scale1.pth",
+    ],
+}
+
 config_path = os.path.join(os.path.dirname(__file__), "./config.yaml")
 if os.path.exists(config_path):
     config = yaml.load(open(config_path, "r"), Loader=yaml.FullLoader)
@@ -95,17 +114,20 @@ def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
 
 def load_file_from_github_release(model_type, ckpt_name):
     error_strs = []
-    for i, base_model_download_url in enumerate(BASE_MODEL_DOWNLOAD_URLS):
+    all_urls = [base + ckpt_name for base in BASE_MODEL_DOWNLOAD_URLS]
+    all_urls += CKPT_FALLBACK_URLS.get(ckpt_name, [])
+
+    for i, url in enumerate(all_urls):
         try:
-            return load_file_from_url(base_model_download_url + ckpt_name, get_ckpt_container_path(model_type))
+            return load_file_from_url(url, get_ckpt_container_path(model_type))
         except Exception:
             traceback_str = traceback.format_exc()
-            if i < len(BASE_MODEL_DOWNLOAD_URLS) - 1:
+            if i < len(all_urls) - 1:
                 print("Failed! Trying another endpoint.")
-            error_strs.append(f"Error when downloading from: {base_model_download_url + ckpt_name}\n\n{traceback_str}")
+            error_strs.append(f"Error when downloading from: {url}\n\n{traceback_str}")
 
     error_str = '\n\n'.join(error_strs)
-    raise Exception(f"Tried all GitHub base urls to download {ckpt_name} but no suceess. Below is the error log:\n\n{error_str}")
+    raise Exception(f"Tried all urls to download {ckpt_name} but no success. Below is the error log:\n\n{error_str}")
                 
 
 def load_file_from_direct_url(model_type, url):
