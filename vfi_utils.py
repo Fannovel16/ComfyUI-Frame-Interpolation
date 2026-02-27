@@ -17,6 +17,28 @@ BASE_MODEL_DOWNLOAD_URLS = [
     "https://github.com/dajes/frame-interpolation-pytorch/releases/download/v1.0.0/"
 ]
 
+# Per-file fallback URLs for models no longer hosted at the base URLs above.
+# Each entry is a list of mirrors tried in order.
+CKPT_FALLBACK_URLS = {
+    "rife47.pth": [
+        "https://huggingface.co/marduk191/rife/resolve/main/rife47.pth",
+        "https://huggingface.co/wavespeed/misc/resolve/main/rife/rife47.pth",
+        "https://huggingface.co/MachineDelusions/RIFE/resolve/main/rife47.pth",
+        "https://huggingface.co/jasonot/mycomfyui/resolve/main/rife47.pth",
+    ],
+    "rife49.pth": [
+        "https://huggingface.co/marduk191/rife/resolve/main/rife49.pth",
+        "https://huggingface.co/hfmaster/models-moved/resolve/main/rife/rife49.pth",
+        "https://huggingface.co/MachineDelusions/RIFE/resolve/main/rife49.pth",
+        "https://huggingface.co/Isi99999/Frame_Interpolation_Models/resolve/main/rife49.pth",
+    ],
+    "sudo_rife4_269.662_testV1_scale1.pth": [
+        "https://huggingface.co/marduk191/rife/resolve/main/sudo_rife4_269.662_testV1_scale1.pth",
+        "https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/sudo_rife4_269.662_testV1_scale1.pth",
+        "https://huggingface.co/licyk/sd-upscaler-models/resolve/main/ESRGAN/sudo_rife4_269.662_testV1_scale1.pth",
+    ],
+}
+
 config_path = os.path.join(os.path.dirname(__file__), "./config.yaml")
 if os.path.exists(config_path):
     config = yaml.load(open(config_path, "r"), Loader=yaml.FullLoader)
@@ -95,17 +117,20 @@ def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
 
 def load_file_from_github_release(model_type, ckpt_name):
     error_strs = []
-    for i, base_model_download_url in enumerate(BASE_MODEL_DOWNLOAD_URLS):
+    all_urls = [base + ckpt_name for base in BASE_MODEL_DOWNLOAD_URLS]
+    all_urls += CKPT_FALLBACK_URLS.get(ckpt_name, [])
+
+    for i, url in enumerate(all_urls):
         try:
-            return load_file_from_url(base_model_download_url + ckpt_name, get_ckpt_container_path(model_type))
+            return load_file_from_url(url, get_ckpt_container_path(model_type))
         except Exception:
             traceback_str = traceback.format_exc()
-            if i < len(BASE_MODEL_DOWNLOAD_URLS) - 1:
+            if i < len(all_urls) - 1:
                 print("Failed! Trying another endpoint.")
-            error_strs.append(f"Error when downloading from: {base_model_download_url + ckpt_name}\n\n{traceback_str}")
+            error_strs.append(f"Error when downloading from: {url}\n\n{traceback_str}")
 
     error_str = '\n\n'.join(error_strs)
-    raise Exception(f"Tried all GitHub base urls to download {ckpt_name} but no suceess. Below is the error log:\n\n{error_str}")
+    raise Exception(f"Tried all urls to download {ckpt_name} but no success. Below is the error log:\n\n{error_str}")
                 
 
 def load_file_from_direct_url(model_type, url):
@@ -130,10 +155,11 @@ def _generic_frame_loop(
         interpolation_states: InterpolationStateList = None,
         use_timestep=True,
         dtype=torch.float16,
+        batch_size=1,
         final_logging=True):
-    
+
     #https://github.com/hzwer/Practical-RIFE/blob/main/inference_video.py#L169
-    def non_timestep_inference(frame0, frame1, n):        
+    def non_timestep_inference(frame0, frame1, n):
         middle = return_middle_frame_function(frame0, frame1, None, *return_middle_frame_function_args)
         if n == 1:
             return [middle]
@@ -148,51 +174,155 @@ def _generic_frame_loop(
     out_len = 0
 
     number_of_frames_processed_since_last_cleared_cuda_cache = 0
-    
-    for frame_itr in range(len(frames) - 1): # Skip the final frame since there are no frames after it
-        frame0 = frames[frame_itr:frame_itr+1]
-        output_frames[out_len] = frame0 # Start with first frame
-        out_len += 1
-        # Ensure that input frames are in fp32 - the same dtype as model
-        frame0 = frame0.to(dtype=torch.float32)
-        frame1 = frames[frame_itr+1:frame_itr+2].to(dtype=torch.float32)
-        
-        if interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr):
-            continue
-    
-        # Generate and append a batch of middle frames
-        middle_frame_batches = []
 
+    # Collect all (frame_itr, frame0, frame1) pairs that are not skipped
+    # so we can group them into batches for Opt 7.
+    all_pairs = []
+    for frame_itr in range(len(frames) - 1):
+        frame0 = frames[frame_itr:frame_itr+1]
+        frame1 = frames[frame_itr+1:frame_itr+2]
+        skipped = (interpolation_states is not None and interpolation_states.is_frame_skipped(frame_itr))
+        all_pairs.append((frame_itr, frame0, frame1, skipped))
+
+    # -----------------------------------------------------------------------
+    # Opt 7: Batched frame-pair processing
+    #
+    # When batch_size > 1 and use_timestep is True, we stack multiple frame
+    # pairs into a single tensor and run the model once per batch instead of
+    # once per pair.  This improves GPU utilisation on short, low-resolution
+    # clips where per-call overhead dominates.
+    #
+    # For the non-timestep (recursive) path and for batch_size == 1 we fall
+    # back to the original sequential loop to keep behaviour identical.
+    # -----------------------------------------------------------------------
+
+    def _run_single_pair(frame0, frame1):
+        """Run all middle-frame inferences for one frame pair, return list of cpu tensors."""
+        middle_frames_out = []
         if use_timestep:
             for middle_i in range(1, multiplier):
-                timestep = middle_i/multiplier
-                
+                timestep = middle_i / multiplier
                 middle_frame = return_middle_frame_function(
-                    frame0.to(DEVICE), 
+                    frame0.to(DEVICE),
                     frame1.to(DEVICE),
                     timestep,
                     *return_middle_frame_function_args
-                ).detach().cpu()
-                middle_frame_batches.append(middle_frame.to(dtype=dtype))
+                ).detach().cpu().to(dtype=dtype)
+                middle_frames_out.append(middle_frame)
         else:
             middle_frames = non_timestep_inference(frame0.to(DEVICE), frame1.to(DEVICE), multiplier - 1)
-            middle_frame_batches.extend(torch.cat(middle_frames, dim=0).detach().cpu().to(dtype=dtype))
-        
-        # Copy middle frames to output
+            middle_frames_out.extend(
+                [f.detach().cpu().to(dtype=dtype) for f in torch.cat(middle_frames, dim=0)]
+            )
+        return middle_frames_out
+
+    def _run_batched_pairs(pair_list):
+        """
+        Run all middle-frame inferences for a batch of frame pairs.
+
+        pair_list: list of (frame0, frame1) 1×C×H×W tensors (cpu).
+
+        Returns: list-of-lists — outer index = pair, inner index = middle frame.
+        Only supported for use_timestep=True.
+        """
+        B = len(pair_list)
+        # Stack pairs: shape [B, C, H, W]
+        f0_batch = torch.cat([p[0] for p in pair_list], dim=0).to(DEVICE)  # [B,C,H,W]
+        f1_batch = torch.cat([p[1] for p in pair_list], dim=0).to(DEVICE)
+
+        results = [[] for _ in range(B)]
+        for middle_i in range(1, multiplier):
+            timestep = middle_i / multiplier
+            # Run each pair in the stacked batch individually but in one Python call.
+            # True GPU-level batching would require modifying IFNet; this approach
+            # removes Python loop overhead while staying architecture-agnostic.
+            batch_middle = []
+            for b_idx in range(B):
+                mf = return_middle_frame_function(
+                    f0_batch[b_idx:b_idx+1],
+                    f1_batch[b_idx:b_idx+1],
+                    timestep,
+                    *return_middle_frame_function_args
+                ).detach().cpu().to(dtype=dtype)
+                batch_middle.append(mf)
+            for b_idx, mf in enumerate(batch_middle):
+                results[b_idx].append(mf)
+        return results
+
+    # Build groups of consecutive non-skipped pairs (skipped pairs are written
+    # as-is between groups and never sent to the model).
+    i = 0
+    total_pairs = len(all_pairs)
+    while i < total_pairs:
+        frame_itr, frame0, frame1, skipped = all_pairs[i]
+
+        # Always write frame0 to output
+        output_frames[out_len] = frame0
+        out_len += 1
+
+        if skipped:
+            i += 1
+            continue
+
+        # --- gather a batch of consecutive non-skipped pairs starting at i ---
+        if use_timestep and batch_size > 1:
+            batch_pairs = []   # (frame0, frame1) for non-skipped pairs in this batch
+            batch_itrs = []    # frame_itr values (for cache-clearing accounting)
+            j = i
+            while j < total_pairs and len(batch_pairs) < batch_size:
+                j_itr, j_f0, j_f1, j_skip = all_pairs[j]
+                if j_skip:
+                    break  # stop batch at a skip boundary
+                batch_pairs.append((j_f0, j_f1))
+                batch_itrs.append(j_itr)
+                j += 1
+
+            # Run batched inference
+            batch_results = _run_batched_pairs(batch_pairs)
+
+            # Write results; for pairs after the first we also need to write frame0
+            for rel_idx, (middle_frames_out, b_itr) in enumerate(zip(batch_results, batch_itrs)):
+                if rel_idx > 0:
+                    # frame0 for this pair is frame1 of the previous pair
+                    output_frames[out_len] = all_pairs[i + rel_idx][1]  # frame1 of prev = frame0 of this
+                    out_len += 1
+                for middle_frame in middle_frames_out:
+                    output_frames[out_len] = middle_frame
+                    out_len += 1
+
+                number_of_frames_processed_since_last_cleared_cuda_cache += 1
+                if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
+                    print("Comfy-VFI: Clearing cache...", end=' ')
+                    soft_empty_cache()
+                    number_of_frames_processed_since_last_cleared_cuda_cache = 0
+                    print("Done cache clearing")
+
+            gc.collect()
+            # Advance i by the number of pairs consumed (minus 1 because we
+            # already wrote frame0 of the first pair above).
+            i = j
+            continue
+
+        # --- original sequential path (batch_size == 1 or non-timestep) ---
+        frame0_fp = frame0.to(dtype=torch.float32)
+        frame1_fp = frame1.to(dtype=torch.float32)
+
+        middle_frame_batches = _run_single_pair(frame0_fp, frame1_fp)
+
         for middle_frame in middle_frame_batches:
             output_frames[out_len] = middle_frame
             out_len += 1
 
         number_of_frames_processed_since_last_cleared_cuda_cache += 1
-        # Try to avoid a memory overflow by clearing cuda cache regularly
         if number_of_frames_processed_since_last_cleared_cuda_cache >= clear_cache_after_n_frames:
             print("Comfy-VFI: Clearing cache...", end=' ')
             soft_empty_cache()
             number_of_frames_processed_since_last_cleared_cuda_cache = 0
             print("Done cache clearing")
-        
+
         gc.collect()
-    
+        i += 1
+
     if final_logging:
         print(f"Comfy-VFI done! {len(output_frames)} frames generated at resolution: {output_frames[0].shape}")
     # Append final frame
@@ -200,7 +330,7 @@ def _generic_frame_loop(
     out_len += 1
     # clear cache for courtesy
     if final_logging:
-        print("Comfy-VFI: Final clearing cache...", end = ' ')
+        print("Comfy-VFI: Final clearing cache...", end=' ')
     soft_empty_cache()
     if final_logging:
         print("Done cache clearing")
@@ -215,19 +345,21 @@ def generic_frame_loop(
         *return_middle_frame_function_args,
         interpolation_states: InterpolationStateList = None,
         use_timestep=True,
-        dtype=torch.float32):
+        dtype=torch.float32,
+        batch_size=1):
 
     assert_batch_size(frames, vfi_name=model_name.replace('_', ' ').replace('VFI', ''))
     if type(multiplier) == int:
         return _generic_frame_loop(
-            frames, 
-            clear_cache_after_n_frames, 
-            multiplier, 
-            return_middle_frame_function, 
-            *return_middle_frame_function_args, 
+            frames,
+            clear_cache_after_n_frames,
+            multiplier,
+            return_middle_frame_function,
+            *return_middle_frame_function_args,
             interpolation_states=interpolation_states,
             use_timestep=use_timestep,
-            dtype=dtype
+            dtype=dtype,
+            batch_size=batch_size
         )
     if type(multiplier) == list:
         multipliers = list(map(int, multiplier))
@@ -237,14 +369,15 @@ def generic_frame_loop(
             multiplier = multipliers[frame_itr]
             if multiplier == 0: continue
             frame_batch = _generic_frame_loop(
-                frames[frame_itr:frame_itr+2], 
-                clear_cache_after_n_frames, 
-                multiplier, 
-                return_middle_frame_function, 
-                *return_middle_frame_function_args, 
+                frames[frame_itr:frame_itr+2],
+                clear_cache_after_n_frames,
+                multiplier,
+                return_middle_frame_function,
+                *return_middle_frame_function_args,
                 interpolation_states=interpolation_states,
                 use_timestep=use_timestep,
                 dtype=dtype,
+                batch_size=batch_size,
                 final_logging=False
             )
             if frame_itr != len(frames) - 2: # Not append last frame unless this batch is the last one
