@@ -17,6 +17,7 @@ from vfi_models.film import FILM_VFI
 from vfi_models.stmfnet import STMFNet_VFI
 from vfi_models.flavr import FLAVR_VFI
 from vfi_models.cain import CAIN_VFI
+from vfi_models.practicalrife import PracticalRIFE_VFI
 from vfi_utils import MakeInterpolationStateList, FloatToInt
     
 NODE_CLASS_MAPPINGS = {
@@ -34,6 +35,7 @@ NODE_CLASS_MAPPINGS = {
     "STMFNet VFI": STMFNet_VFI,
     "FLAVR VFI": FLAVR_VFI,
     "CAIN VFI": CAIN_VFI,
+    "Practical RIFE": PracticalRIFE_VFI,
     "VFI FloatToInt": FloatToInt
 }
 
