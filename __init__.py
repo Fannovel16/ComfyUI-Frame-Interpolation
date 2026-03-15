@@ -35,6 +35,7 @@ NODE_CLASS_MAPPINGS = {
     "STMFNet VFI": STMFNet_VFI,
     "FLAVR VFI": FLAVR_VFI,
     "CAIN VFI": CAIN_VFI,
+    "ATM VFI": ATM_VFI,
     "VFI FloatToInt": FloatToInt
 }
 
