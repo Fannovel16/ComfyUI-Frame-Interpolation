@@ -17,6 +17,7 @@ from vfi_models.film import FILM_VFI
 from vfi_models.stmfnet import STMFNet_VFI
 from vfi_models.flavr import FLAVR_VFI
 from vfi_models.cain import CAIN_VFI
+from vfi_models.atm import ATM_VFI
 from vfi_utils import MakeInterpolationStateList, FloatToInt
     
 NODE_CLASS_MAPPINGS = {
@@ -38,5 +39,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "RIFE VFI": "RIFE VFI (recommend rife47 and rife49)"
+    "RIFE VFI": "RIFE VFI (recommend rife47 and rife49)",
+    "ATM VFI": "ATM VFI (only supports 2x multiplier)"
 }
