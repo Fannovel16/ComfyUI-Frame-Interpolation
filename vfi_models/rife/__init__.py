@@ -202,8 +202,7 @@ class RIFE_VFI:
                     frame1_batch,
                     timestep_tensor,
                     scale_list,
-                    training=False, 
-                    fastmode,
+                    fast_mode,
                     ensemble,
                 ).clamp(0, 1).detach().cpu()
 
