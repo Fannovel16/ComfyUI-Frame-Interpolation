@@ -21,6 +21,8 @@ A custom node set for Video Frame Interpolation in ComfyUI.
 * Make Interpolation State List
 * STMFNet VFI (requires at least 4 frames, can only do 2x interpolation for now)
 * FLAVR VFI (same conditions as STMFNet)
+* ATM-VFI (only supports 2x interpolation)
+* MoMo VFI (only supports 2x interpolation)
 
 ## Install
 ### ComfyUI Manager
@@ -192,3 +194,25 @@ https://github.com/98mxr/IFUNet
   year={2021}
 }
 ```
+
+### ATM-VFI
+```bibtex
+@article{gan2025atmvfi,
+    title={Exploiting Attention-to-Motion via Transformer for Versatile Video Frame Interpolation},
+    author={Gan, Chee-Kim and Ding, Jian-Jiun and Hsieh, Chang-Yu and Lu, De-Yan},
+    booktitle={Proceedings of the IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP)},
+    year={2025}
+}
+```
+
+### MoMo
+```bibtex
+@article{lew2024disentangled,
+  title={Disentangled Motion Modeling for Video Frame Interpolation},
+  author={Lew, Jaihyun and Choi, Jooyoung and Shin, Chaehun and Jung, Dahuin and Yoon, Sungroh},
+  journal={arXiv preprint arXiv:2406.17256},
+  year={2024}
+}
+```
+
+
