@@ -109,7 +109,7 @@ class MOMO_VFI:
         from .synthesis import SynthesisNet
         from .momo import MoMo
 
-        if ckpt_name == "model-lite.pth":
+        if ckpt_name == "momo-lite.pth":
             dims = (96, 160)
         else:
             dims = (256, 256, 512)
