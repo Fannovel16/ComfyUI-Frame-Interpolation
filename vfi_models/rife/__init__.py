@@ -10,6 +10,8 @@ MODEL_TYPE = pathlib.Path(__file__).parent.name
 CKPT_NAME_VER_DICT = {
     "rife47.pth": "4.7",
     "rife49.pth": "4.7",
+    "rife417.pth": "4.17",
+    "rife426.pth": "4.26",
     "sudo_rife4_269.662_testV1_scale1.pth": "4.0",
     # Arch 4.10 doesn't work due to state dict mismatch
     # "rife410.pth": "4.10",
@@ -118,6 +120,10 @@ class RIFE_VFI:
         torch_dtype = DTYPE_MAP[dtype]
         device = get_torch_device()
 
+        #  4.26 disable ensemble
+        if arch_ver == "4.26":
+            ensemble = False  # 4.26 版本不支持 ensemble
+
         # Cache the model by (ckpt_name, dtype, torch_compile) so repeated node
         # executions skip the load_state_dict + device transfer entirely.
         cache_key = (ckpt_name, dtype, torch_compile)
@@ -147,7 +153,11 @@ class RIFE_VFI:
             multipliers = list(map(int, multiplier))
             multipliers += [2] * (n_pairs - len(multipliers))
 
-        scale_list = [8 / scale_factor, 4 / scale_factor, 2 / scale_factor, 1 / scale_factor]
+         #  4.26 scale_list
+        if arch_ver == "4.26":
+            scale_list = [16 / scale_factor, 8 / scale_factor, 4 / scale_factor, 2 / scale_factor, 1 / scale_factor]
+        else:
+            scale_list = [8 / scale_factor, 4 / scale_factor, 2 / scale_factor, 1 / scale_factor]
 
         # Build a flat list of all (pair_idx, timestep) tasks, skipping excluded pairs.
         # Each task produces exactly one intermediate frame.
