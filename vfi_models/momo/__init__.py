@@ -34,7 +34,7 @@ class InputPadder:
         return x[..., c[0]:c[1], c[2]:c[3]]
 
 MODEL_TYPE = pathlib.Path(__file__).parent.name
-CKPT_NAMES = ["model-base.pth", "model-lite.pth"]
+CKPT_NAMES = ["momo-base.pth", "momo-lite.pth"]
 DEVICE = get_torch_device()
 def inference(model, img_batch_1, img_batch_2, inter_frames, num_inference_steps):
     results = [
