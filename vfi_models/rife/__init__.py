@@ -46,7 +46,7 @@ class RIFE_VFI:
                 "multiplier": ("INT", {"default": 2, "min": 1}),
                 "fast_mode": ("BOOLEAN", {"default": True}),
                 "ensemble": ("BOOLEAN", {"default": True}),
-                "scale_factor": ([0.25, 0.5, 1.0, 2.0, 4.0], {"default": 1.0}),
+                "scale_factor": ([0.25, 0.5, 1.0, 2.0, 4.0], {"default": 1.0, "tooltip": "Resolution multiplier for optical flow calculation. Lower values = less VRAM/faster, but may reduce motion accuracy. 1.0 is original resolution."}),
                 # Opt 1: Precision — float32 is safe, float16 is ~2x faster/half VRAM,
                 #         bfloat16 is safer than float16 on Ampere+ GPUs (RTX 30xx+)
                 "dtype": (DTYPE_OPTIONS, {"default": "float32"}),
@@ -100,6 +100,7 @@ class RIFE_VFI:
                 How high you should set it depends on how many input frames there are, input resolution (after upscaling),
                 how many times you want to multiply them, and how long you're willing to wait for the process to complete.
             multiplier (int, optional): The multiplier for each input frame. 60 input frames * 2 = 120 output frames. Defaults to 2.
+            scale_factor (float, optional): Resolution multiplier for optical flow calculation. Lower values = less VRAM/faster, but may reduce motion accuracy. 1.0 is original resolution. Defaults to 1.0.
             dtype (str, optional): Floating-point precision for inference.
                 "float32" — full precision, safest (default).
                 "float16" — half precision, ~2x faster and ~50% less VRAM, may have minor artifacts.
@@ -118,6 +119,8 @@ class RIFE_VFI:
         model_path = load_file_from_github_release(MODEL_TYPE, ckpt_name)
         arch_ver = CKPT_NAME_VER_DICT[ckpt_name]
         torch_dtype = DTYPE_MAP[dtype]
+        if get_torch_device().type == "cpu":
+            torch_dtype = torch.float32
         device = get_torch_device()
 
         #  4.26 disable ensemble
