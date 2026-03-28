@@ -1,7 +1,7 @@
 torch
 numpy
 einops
-opencv-contrib-python
+opencv-python
 kornia
 scipy
 Pillow
