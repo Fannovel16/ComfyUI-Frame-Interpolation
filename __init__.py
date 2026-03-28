@@ -2,6 +2,18 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
+# === 插入 Numpy 2.0+ 兼容补丁 ===
+import numpy as np
+if not hasattr(np, 'float'):
+    np.float = float
+if not hasattr(np, 'bool'):
+    np.bool = bool
+if not hasattr(np, 'int'):
+    np.int = int
+if not hasattr(np, 'complex'):
+    np.complex = complex
+# =================================
+
 from .other_nodes import Gradually_More_Denoise_KSampler
 
 #Some models are commented out because the code is not completed
