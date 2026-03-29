@@ -42,7 +42,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "RIFE VFI": "RIFE VFI (recommend rife47 and rife49)",
+    "RIFE VFI": "RIFE VFI (recommend rife4.25+)",
     "ATM VFI": "ATM VFI (only supports 2x multiplier)",
     "MOMO VFI": "MOMO VFI (only supports 2x multiplier)"
 }
