@@ -19,6 +19,10 @@ def get_cuda_ver_from_dir(cuda_home):
         return '11x'
     if '12' in nvrtc:
         return '12x'
+    # === 新增 CUDA 13 的 fallback 逻辑，强制使用 12x 的预编译包以避免源码编译报错 ===
+    if '13' in nvrtc:
+        return '12x'
+    # =========================================================================
 
 s_param = '-s' if "python_embeded" in sys.executable else '' 
 
