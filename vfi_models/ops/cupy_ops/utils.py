@@ -8,23 +8,17 @@ import platform
 
 ##########################################################
 
-
 objCudacache = {}
-
 
 def cuda_int32(intIn: int):
     return cupy.int32(intIn)
 
-
 # end
-
 
 def cuda_float32(fltIn: float):
     return cupy.float32(fltIn)
 
-
 # end
-
 
 def cuda_kernel(strFunction: str, strKernel: str, objVariables: typing.Dict, **replace_kwargs):
     if "device" not in objCudacache:
@@ -218,25 +212,30 @@ def get_cuda_home_path():
     if "CUDA_HOME" in os.environ:
         return os.environ["CUDA_HOME"]
     import torch
+    # 尝试从 Torch 内部库路径寻找 CUDA 相关组件（如 nvrtc）
     torch_lib_path = Path(torch.__file__).parent / "lib"
     torch_lib_path = str(torch_lib_path.resolve())
     if os.path.exists(torch_lib_path):
         nvrtc = filter(lambda lib_file: "nvrtc-builtins" in lib_file, os.listdir(torch_lib_path))
         nvrtc = list(nvrtc)
         return torch_lib_path if len(nvrtc) > 0 else None
+    return None
 
 @cupy.memoize(for_each_device=True)
 def cuda_launch(strKey: str):
-    if True:#"CUDA_HOME" not in os.environ:
-        cuda_home = get_cuda_home_path()
-        if cuda_home is not None:
-            os.environ["CUDA_HOME"] = cuda_home
-            os.environ["CUDA_PATH"] = cuda_home
-        else:
+    # 适配 CUDA 13：动态设置环境变量确保 CuPy 能找到编译器
+    cuda_home = get_cuda_home_path()
+    if cuda_home is not None:
+        os.environ["CUDA_HOME"] = cuda_home
+        os.environ["CUDA_PATH"] = cuda_home
+    elif platform.system() != 'Windows':
+        # Linux 默认 fallback
+        if "CUDA_HOME" not in os.environ:
             os.environ["CUDA_HOME"] = "/usr/local/cuda/"
+        if "CUDA_PATH" not in os.environ:
             os.environ["CUDA_PATH"] = "/usr/local/cuda/"
-    # print(objCudacache[strKey]['strKernel'])
-    # return cupy.cuda.compile_with_cache(objCudacache[strKey]['strKernel'], tuple(['-I ' + os.environ['CUDA_HOME'], '-I ' + os.environ['CUDA_HOME'] + '/include'])).get_function(objCudacache[strKey]['strFunction'])
+
+    # 使用 CuPy RawModule 加载并编译内核
     return cupy.RawModule(code=objCudacache[strKey]["strKernel"]).get_function(
         objCudacache[strKey]["strFunction"]
     )

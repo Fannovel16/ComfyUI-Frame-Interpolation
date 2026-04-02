@@ -1,10 +1,10 @@
 torch
 numpy
 einops
-opencv-contrib-python
+opencv-python
 kornia
 scipy
 Pillow
 torchvision
 tqdm
-cupy-wheel
+cupy-cuda13x
